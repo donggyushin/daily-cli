@@ -3,6 +3,34 @@
 ## 프로젝트 개요
 AI와 대화하며 일기를 작성하는 터미널 기반 일기 앱
 
+## 프로젝트명
+**현재 상태**: 미정 (추후 결정)
+
+**후보 목록**:
+- `dlog` - diary log 약어, 짧고 타이핑 편함
+- `logmate` - 일기 친구, 친근한 느낌
+- `jot` - 영어로 "휘갈겨 쓰다", 세련됨
+- `daylog`, `talklog`, `diario` 등
+
+**참고**: GitHub Repository 이름은 언제든지 변경 가능
+
+---
+
+## 아키텍처 패턴
+
+**레이어드 아키텍처 (Layered Architecture)** 적용
+
+- **Presentation Layer**: CLI UI, 사용자 인터랙션
+- **Domain Layer**: 비즈니스 로직, 엔티티 (프레임워크 독립적)
+- **Data Layer**: 데이터 저장, 외부 API 연동 (교체 가능)
+
+### 확장 계획
+1. **Phase 1 (초기)**: CLI + 로컬 파일 저장
+2. **Phase 2**: 서버 + 데이터베이스 (Data Layer만 교체)
+3. **Phase 3**: 웹/모바일 앱 (Presentation Layer 추가, Domain 재사용)
+
+**상세 내용**: `CLAUDE.md` 참조
+
 ---
 
 ## 핵심 기능
@@ -68,33 +96,73 @@ $ diary search "회의" # 키워드로 일기 검색
 
 ---
 
-## 프로젝트 구조 (예상)
+## 프로젝트 구조 (레이어드 아키텍처)
 
 ```
 diary-cli/
 ├── diary/
-│   ├── __init__.py
-│   ├── cli.py           # Typer 기반 CLI 진입점
-│   ├── conversation.py  # AI 대화 로직
-│   ├── writer.py        # 일기 생성 로직
-│   ├── storage.py       # 데이터 저장/조회
-│   ├── ui.py            # Rich 기반 UI 컴포넌트
-│   └── config.py        # 설정 관리 (API Key 등)
-├── data/                # 일기 데이터 저장 폴더
+│   ├── presentation/           # Presentation Layer
+│   │   ├── cli.py              # CLI 명령어 (Typer)
+│   │   └── ui.py               # UI 컴포넌트 (Rich)
+│   ├── domain/                 # Domain Layer
+│   │   ├── entities/           # 도메인 엔티티
+│   │   │   ├── diary.py
+│   │   │   ├── conversation.py
+│   │   │   └── mood.py
+│   │   ├── services/           # 비즈니스 로직
+│   │   │   ├── conversation_service.py
+│   │   │   ├── diary_writer_service.py
+│   │   │   └── mood_tracker_service.py
+│   │   └── interfaces/         # Repository 인터페이스
+│   │       └── diary_repository.py
+│   └── data/                   # Data Layer
+│       ├── repositories/       # Repository 구현체
+│       │   ├── file_diary_repository.py      # Phase 1
+│       │   └── db_diary_repository.py        # Phase 2+
+│       ├── api/                # 외부 API
+│       │   └── ai_client.py
+│       └── config/             # 설정 관리
+│           └── config_manager.py
+├── data/                       # 실제 데이터 저장 (로컬 파일)
 ├── tests/
 ├── requirements.txt
-└── README.md
+├── README.md
+├── PROJECT_INFO.md             # 이 파일
+└── CLAUDE.md                   # 아키텍처 상세 가이드
 ```
+
+**핵심 원칙**:
+- Domain Layer는 Data Layer를 **인터페이스로만** 의존
+- Data Layer 교체 시 Domain/Presentation 코드는 변경 없음
+- 상세 내용은 `CLAUDE.md` 참조
 
 ---
 
-## 개발 단계 (예상)
+## 개발 단계
 
-1. **Phase 1**: 기본 CLI 구조 + 간단한 대화 + 일기 생성
-2. **Phase 2**: 저장/조회 기능 추가
-3. **Phase 3**: 3가지 스타일 선택, 기분 트래킹
-4. **Phase 4**: 검색, 요약, 사진/링크 첨부 등 고급 기능
-5. **Phase 5**: UI 개선, 성능 최적화
+### Phase 1: MVP (CLI + 로컬 파일)
+- 레이어드 아키텍처 기반 프로젝트 구조 세팅
+- 기본 CLI 명령어 (write, show, list)
+- AI 자유 대화 기반 일기 작성
+- 3가지 스타일 선택
+- 로컬 파일 시스템 저장 (JSON)
+- 기분 트래킹 기본 기능
+
+### Phase 2: 고급 기능
+- 검색 기능
+- 일주일/한 달 요약
+- 사진/링크 첨부
+- UI 개선 (Rich 활용)
+
+### Phase 3: 서버 + DB
+- API 서버 구축 (FastAPI)
+- Data Layer 교체 (파일 → PostgreSQL)
+- 사용자 계정 기능
+
+### Phase 4: 멀티 플랫폼
+- 웹 프론트엔드 (React)
+- iOS 앱 (Swift)
+- Domain Layer 재사용
 
 ---
 
@@ -103,3 +171,5 @@ diary-cli/
 - 키보드만으로 모든 조작 가능해야 함
 - ASCII 아트나 시각적 요소 활용 가능
 - 사용자가 하루에 한 번이라도 실행하면 성공
+- GitHub Repository 이름은 추후 언제든지 변경 가능
+- 코드 작업 시 레이어드 아키텍처 원칙 준수 (상세: `CLAUDE.md`)
