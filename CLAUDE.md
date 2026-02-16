@@ -2,8 +2,12 @@
 
 ## 아키텍처 원칙
 
-이 프로젝트는 **레이어드 아키텍처(Layered Architecture)** 패턴을 따릅니다.
-각 레이어는 명확한 책임을 가지며, 의존성 방향은 항상 **외부(Presentation) → 내부(Domain)**로 흐릅니다.
+이 프로젝트는 **레이어드 아키텍처(Layered Architecture)** + **의존성 역전 원칙(DIP)** 을 따릅니다.
+
+**핵심 원칙**:
+- **Domain Layer는 아무것도 의존하지 않습니다** (순수 비즈니스 로직)
+- **Presentation Layer는 Domain에 의존**합니다
+- **Data Layer는 Domain의 인터페이스를 구현**합니다 (의존성 역전)
 
 확장 가능성을 고려하여 설계하되, 초기에는 단순하게 시작합니다.
 
@@ -16,15 +20,18 @@
 │   Presentation Layer            │  ← CLI UI, 사용자 인터랙션
 │   (CLI, 명령어, UI 컴포넌트)      │
 └────────────┬────────────────────┘
-             │ 의존
-┌────────────▼────────────────────┐
-│   Domain Layer                  │  ← 비즈니스 로직, 엔티티
-│   (일기 작성, 대화 관리, 규칙)    │
+             │ depends on
+             ↓
+┌─────────────────────────────────┐
+│   Domain Layer                  │  ← 비즈니스 로직, 엔티티, 인터페이스
+│   (일기 작성, 대화 관리, 규칙)    │  ← 아무것도 의존하지 않음!
+│   + Repository 인터페이스 정의   │
 └────────────┬────────────────────┘
-             │ 의존
-┌────────────▼────────────────────┐
-│   Data Layer                    │  ← 저장소, 외부 API
-│   (파일 시스템, DB, AI API)       │
+             ↑ implements
+             │
+┌────────────┴────────────────────┐
+│   Data Layer                    │  ← 저장소, 외부 API 구현체
+│   (파일 시스템, DB, AI API)       │  ← Domain 인터페이스를 구현
 └─────────────────────────────────┘
 ```
 
@@ -58,47 +65,61 @@ def write():
 ---
 
 ### 2. Domain Layer
-**책임**: 비즈니스 로직, 도메인 규칙
+**책임**: 비즈니스 로직, 도메인 규칙, 인터페이스 정의
 
 - 일기 작성 로직 (AI와 대화 → 일기 생성)
 - 대화 흐름 관리 (언제 종료할지 판단)
 - 일기 스타일 선택 및 적용
 - 기분 트래킹, 요약 생성 등 핵심 로직
-- **외부 의존성 없음** (Data Layer를 인터페이스로만 의존)
+- **Repository 인터페이스 정의** (Data Layer가 구현할 계약)
+- **외부 의존성 없음** - 프레임워크, DB, API 등 아무것도 모름
 
 **주요 파일**:
 - `entities/` - 일기, 대화, 기분 등 도메인 엔티티
 - `services/` - 대화 서비스, 일기 생성 서비스
-- `interfaces/` - Repository 인터페이스 (추상화)
+- `interfaces/` - Repository 인터페이스 (Domain에 속함!)
 
 **핵심 원칙**:
-- Data Layer의 **구현체를 직접 참조하지 않음**
-- Repository **인터페이스**를 통해서만 데이터 접근
+- **Domain은 아무것도 의존하지 않음** - 가장 안쪽 레이어
+- **인터페이스(추상)는 Domain이 정의**하고, Data Layer가 구현함 (의존성 역전)
 
 **예시**:
 ```python
-# services/conversation_service.py
+# domain/interfaces/diary_repository.py (인터페이스는 Domain에 정의!)
+from abc import ABC, abstractmethod
+
+class DiaryRepositoryInterface(ABC):
+    @abstractmethod
+    def save(self, diary: Diary) -> None:
+        pass
+
+    @abstractmethod
+    def get_by_date(self, date: str) -> Diary:
+        pass
+
+# domain/services/conversation_service.py
 class ConversationService:
     def __init__(self, diary_repo: DiaryRepositoryInterface):
-        self.diary_repo = diary_repo  # 인터페이스에만 의존
+        self.diary_repo = diary_repo  # 추상에만 의존 (구현체 모름!)
 
     def start_conversation(self):
         # 비즈니스 로직
         diary = self._generate_diary(conversation)
-        self.diary_repo.save(diary)  # 저장은 Data Layer에 위임
+        self.diary_repo.save(diary)  # 누가 구현했는지 모름
         return diary
 ```
 
 ---
 
 ### 3. Data Layer
-**책임**: 데이터 영속성, 외부 시스템 연동
+**책임**: 데이터 영속성, 외부 시스템 연동, **Domain 인터페이스 구현**
 
+- **Domain의 Repository 인터페이스를 구현**
 - 일기 저장/조회 (파일 시스템 or DB)
 - AI API 호출 (OpenAI, Anthropic 등)
 - 설정 파일 관리 (API Key 등)
 
-**확장 전략**:
+**확장 전략** (같은 인터페이스, 다른 구현체):
 ```
 초기 구현:
 - FileSystemDiaryRepository (JSON 파일 저장)
@@ -107,10 +128,12 @@ class ConversationService:
 확장 후:
 - DatabaseDiaryRepository (PostgreSQL/MySQL)
 - RemoteConfigStorage (서버에서 설정 가져오기)
+
+→ Domain/Presentation 코드는 변경 없이 Data Layer만 교체!
 ```
 
 **주요 파일**:
-- `repositories/` - Repository 구현체
+- `repositories/` - Repository 구현체 (Domain의 인터페이스를 implements)
   - `file_diary_repository.py` (초기)
   - `db_diary_repository.py` (확장 시)
 - `api/` - AI API 클라이언트
@@ -118,7 +141,10 @@ class ConversationService:
 
 **예시**:
 ```python
-# repositories/file_diary_repository.py
+# data/repositories/file_diary_repository.py
+# Domain의 인터페이스를 구현 (Domain → Data 방향 의존성 역전!)
+from domain.interfaces.diary_repository import DiaryRepositoryInterface
+
 class FileSystemDiaryRepository(DiaryRepositoryInterface):
     def save(self, diary: Diary):
         # JSON 파일로 저장
@@ -130,7 +156,10 @@ class FileSystemDiaryRepository(DiaryRepositoryInterface):
         with open(f"data/{date}.json", "r") as f:
             return Diary.from_dict(json.load(f))
 
-# repositories/db_diary_repository.py (확장 시)
+# data/repositories/db_diary_repository.py (확장 시)
+# 같은 인터페이스, 다른 구현체!
+from domain.interfaces.diary_repository import DiaryRepositoryInterface
+
 class DatabaseDiaryRepository(DiaryRepositoryInterface):
     def save(self, diary: Diary):
         # PostgreSQL에 저장
@@ -176,14 +205,24 @@ Data: PostgreSQL + API Server (동일)
 각 레이어 간 결합도를 낮추기 위해 **의존성 주입** 사용:
 
 ```python
-# 초기 (로컬 파일)
-diary_repo = FileSystemDiaryRepository()
-conversation_service = ConversationService(diary_repo)
+# cli.py (Presentation Layer) - 의존성 조립은 여기서!
 
-# 확장 후 (DB)
-diary_repo = DatabaseDiaryRepository(db_connection)
-conversation_service = ConversationService(diary_repo)  # 코드 동일!
+# 초기 (로컬 파일)
+from data.repositories.file_diary_repository import FileSystemDiaryRepository
+from domain.services.conversation_service import ConversationService
+
+diary_repo = FileSystemDiaryRepository()  # Data Layer 구현체
+conversation_service = ConversationService(diary_repo)  # Domain은 인터페이스만 알고 있음
+
+# 확장 후 (DB) - Domain/Presentation 코드는 변경 없음!
+from data.repositories.db_diary_repository import DatabaseDiaryRepository
+from domain.services.conversation_service import ConversationService
+
+diary_repo = DatabaseDiaryRepository(db_connection)  # Data Layer만 교체
+conversation_service = ConversationService(diary_repo)  # Domain 코드 동일!
 ```
+
+**핵심**: Domain은 구현체를 모르고, Presentation이 어떤 구현체를 주입할지 결정합니다.
 
 ---
 
@@ -224,10 +263,17 @@ diary-cli/
 
 ## 핵심 원칙 요약
 
-1. **레이어 간 의존성은 단방향**: Presentation → Domain → Data
-2. **Domain은 Data를 직접 참조하지 않음**: 인터페이스로만 의존
-3. **Data Layer는 교체 가능**: 파일 → DB → API로 쉽게 전환
-4. **Domain Layer는 순수 비즈니스 로직만**: 프레임워크, 라이브러리 독립적
+1. **Domain은 아무것도 의존하지 않음**: 가장 안쪽, 순수 비즈니스 로직
+2. **인터페이스는 Domain이 정의**: Data Layer가 이를 구현 (의존성 역전)
+3. **Presentation은 Domain에만 의존**: UI는 비즈니스 로직 호출
+4. **Data Layer는 교체 가능**: 파일 → DB → API로 쉽게 전환 (같은 인터페이스)
 5. **확장 시 기존 코드는 최소 변경**: 새로운 구현체 추가로 확장
+
+**의존성 흐름**:
+```
+Presentation → Domain ← Data
+                ↑
+            (인터페이스 정의)
+```
 
 이 구조를 따르면, CLI → 웹 → 모바일로 확장해도 핵심 로직은 재사용 가능합니다.
