@@ -1,0 +1,29 @@
+# 개발용 Dockerfile (소스 코드 수정 가능)
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# uv 환경 변수
+ENV UV_COMPILE_BYTECODE=1
+
+# 개발 도구 설치
+RUN apt-get update && apt-get install -y \
+    git \
+    vim \
+    tree \
+    && rm -rf /var/lib/apt/lists/*
+
+# 의존성 파일 복사
+COPY pyproject.toml uv.lock ./
+
+# 의존성 설치 (개발 의존성 포함)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen
+
+# 소스는 볼륨 마운트로 처리
+# PATH에 가상환경 추가
+ENV PATH="/app/.venv/bin:$PATH"
+
+# 기본 쉘
+CMD ["bash"]
