@@ -39,4 +39,3 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 # 기본 명령어
 ENTRYPOINT ["diary"]
-CMD ["--help"]
