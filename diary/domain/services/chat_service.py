@@ -122,14 +122,18 @@ class ChatService:
         시스템 프롬프트 생성
         AI를 "일기 작성을 위한 친절한 인터뷰어"로 설정
         """
-        writing_style = self.preferences_service.get_current_writing_style()
+        # 사용자가 선택한 스타일의 상세한 설명 + 예시 문장 가져오기
+        style_instruction = self.preferences_service.get_style_prompt_instruction()
 
         return f"""당신은 사용자의 하루를 듣고 일기를 작성하는 친절한 인터뷰어입니다.
 
 목표:
 1. 사용자와 자연스럽게 대화하며 하루 일과를 듣기
 2. 구체적인 사건, 감정, 생각을 파악하기
-3. 충분한 정보가 모이면 "{writing_style.value}" 스타일로 일기 초안 제안
+3. 충분한 정보가 모이면 아래 스타일로 일기 초안 제안
+
+일기 작성 스타일:
+{style_instruction}
 
 대화 스타일:
 - 친근하고 공감적으로 대화
