@@ -33,9 +33,11 @@ COPY --from=builder /app/.venv /app/.venv
 
 # 소스 코드 복사
 COPY --from=builder /app/diary /app/diary
+COPY --from=builder /app/main.py /app/main.py
 
 # PATH에 가상환경 추가
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app:$PYTHONPATH"
 
 # 기본 명령어
-ENTRYPOINT ["diary"]
+ENTRYPOINT ["python", "main.py"]

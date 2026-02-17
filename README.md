@@ -2,9 +2,31 @@
 
 AI와 대화하며 작성하는 일기 앱
 
-## 실행 방법
+## 주요 기능
 
-### 1. Docker 사용 (권장)
+- ✅ **AI API 키 관리**: OpenAI, Anthropic, Google AI 지원
+- ✅ **생성자 주입 방식**: 명시적 의존성 주입 (Constructor Injection)
+- ✅ **레이어드 아키텍처**: Domain, Data, Presentation 분리
+- 🚧 **AI 대화형 일기 작성**: 구현 예정
+
+## 빠른 시작
+
+### 1. 로컬 실행 (권장)
+
+```bash
+# 의존성 설치
+uv sync
+
+# 실행
+python main.py
+```
+
+최초 실행 시 API 키 등록이 필요합니다:
+1. 사용할 AI 서비스 선택 (OpenAI/Anthropic/Google)
+2. API 키 입력
+3. 메인 메뉴 진입
+
+### 2. Docker 사용
 
 ```bash
 # 빌드
@@ -13,37 +35,44 @@ make build
 # 실행
 make run
 
-# 개발 모드 (소스 코드 수정 가능)
+# 개발 모드
 make dev
 ```
 
-<details>
-<summary>Docker Compose 직접 사용</summary>
+## 사용 예제
+
+### API 키 관리
 
 ```bash
-# 빌드
-docker compose build
+# CLI 실행
+python main.py
 
-# 실행
-docker compose run --rm daily-cli
-
-# 개발 컨테이너
-docker compose run --rm dev
+# 메뉴에서 선택
+1. Write Diary          # 일기 작성 (구현 예정)
+2. Manage API Keys      # API 키 관리
+3. Exit
 ```
-</details>
 
-### 2. 로컬 실행 (uv)
+### 프로그래밍 방식 사용
 
-```bash
-# 의존성 설치
-uv sync
+```python
+from diary.data.repositories import FileSystemCredentialRepository
+from diary.domain.services import CredentialService
+from diary.domain.entities import AIProvider
 
-# 실행
-uv run diary
+# 의존성 조립 (Dependency Injection)
+repo = FileSystemCredentialRepository()
+service = CredentialService(repo)
 
-# 또는 가상환경 활성화 후
-source .venv/bin/activate
-diary
+# API 키 저장
+service.save_credential(
+    provider=AIProvider.OPENAI,
+    api_key="sk-proj-xxx"
+)
+
+# 기본 AI 조회
+default = service.get_default_credential()
+print(f"사용 중인 AI: {default.provider.value}")
 ```
 
 ## 아키텍처

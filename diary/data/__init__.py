@@ -1,1 +1,5 @@
-"""Data Layer - 데이터 저장소 및 외부 API"""
+"""Data Layer - External integrations and persistence"""
+
+from diary.data.repositories import FileSystemCredentialRepository
+
+__all__ = ["FileSystemCredentialRepository"]

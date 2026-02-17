@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-diary = "diary.presentation.cli:app"
+diary = "main:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["diary"]

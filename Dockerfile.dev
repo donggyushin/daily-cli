@@ -24,6 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # 소스는 볼륨 마운트로 처리
 # PATH에 가상환경 추가
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app:$PYTHONPATH"
 
 # 기본 쉘
 CMD ["bash"]
