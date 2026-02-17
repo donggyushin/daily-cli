@@ -61,6 +61,7 @@ class FileSystemChatRepository(ChatRepositoryInterface):
                 data = json.load(f)
                 return ChatSession.from_dict(data)
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            print(e)
             # JSON 파일이 손상된 경우 None 반환하고 파일 삭제
             print(f"Warning: Corrupted session file {session_id}, removing it.")
             session_file.unlink()
@@ -87,9 +88,7 @@ class FileSystemChatRepository(ChatRepositoryInterface):
     def list_sessions(self, limit: int = 10) -> List[ChatSession]:
         """세션 목록 조회 (최신순)"""
         session_files = sorted(
-            self.data_dir.glob("*.json"),
-            key=lambda p: p.stat().st_mtime,
-            reverse=True
+            self.data_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True
         )
 
         sessions = []
