@@ -74,6 +74,15 @@ class UserPreferencesService:
         self.preferences_repo.save(preferences)
         return preferences
 
+    def get_current_writing_style(self) -> WritingStyle:
+        """현재 선택된 일기 작성 스타일 조회
+
+        Returns:
+            현재 스타일
+        """
+        preferences = self.get_preferences()
+        return preferences.writing_style
+
     def get_style_prompt_instruction(self) -> str:
         """현재 스타일의 AI 프롬프트 지시사항 반환
 
