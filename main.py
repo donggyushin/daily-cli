@@ -59,18 +59,14 @@ def main(ctx: typer.Context):
             chat_service = ChatService(
                 chat_repo=chat_repo,
                 ai_client=ai_client,
-                preferences_service=preferences_service
+                preferences_service=preferences_service,
             )
         else:
             # AI 설정이 없으면 None (첫 실행 시)
             chat_service = None
 
         # Presentation Layer - CLI (Domain에만 의존)
-        diary_app = DiaryApp(
-            credential_service,
-            preferences_service,
-            chat_service
-        )
+        diary_app = DiaryApp(credential_service, preferences_service, chat_service)
 
         # 실행
         diary_app.run()
