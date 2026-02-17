@@ -30,8 +30,8 @@ class DiaryApp:
         if not self.credential_service.has_any_credential():
             self.console.print(
                 Panel.fit(
-                    "[bold yellow]⚠️  등록된 API 키가 없습니다[/bold yellow]\n\n"
-                    "일기를 작성하려면 AI API 키가 필요합니다.",
+                    "[bold yellow]⚠️  There is not registered API Key[/bold yellow]\n\n"
+                    "You need API Key.",
                     border_style="yellow",
                     title="API Key Required",
                 )
@@ -39,7 +39,7 @@ class DiaryApp:
             self.console.print()
 
             if not self._setup_api_key():
-                self.console.print("[red]✗[/red] API 키 등록에 실패했습니다.")
+                self.console.print("[red]✗[/red] Fail to register API Key.")
                 raise typer.Exit(1)
 
             self.console.print()
@@ -53,7 +53,7 @@ class DiaryApp:
         Returns:
             성공 여부
         """
-        self.console.print("[bold]사용할 AI 서비스를 선택하세요:[/bold]")
+        self.console.print("[bold]Choose AI service which you use:[/bold]")
         self.console.print("  1. OpenAI (GPT-4)")
         self.console.print("  2. Anthropic (Claude)")
         self.console.print("  3. Google (Gemini)")
@@ -155,7 +155,7 @@ class DiaryApp:
         all_credentials = self.credential_service.list_all_credentials()
 
         if not all_credentials:
-            self.console.print("[yellow]등록된 API 키가 없습니다.[/yellow]")
+            self.console.print("[yellow]There is not reigstered API Key.[/yellow]")
             return
 
         table = Table(title="Registered API Keys")
@@ -215,9 +215,7 @@ class DiaryApp:
         provider = provider_map[choice]
         try:
             self.credential_service.set_default_provider(provider)
-            self.console.print(
-                f"[green]✓[/green] 기본 AI를 {provider.value}로 변경했습니다."
-            )
+            self.console.print(f"[green]✓[/green] Set {provider.value} as default AI.")
         except ValueError as e:
             self.console.print(f"[red]✗[/red] 오류: {e}")
 
@@ -242,7 +240,7 @@ class DiaryApp:
 
         # 확인
         confirm = Prompt.ask(
-            f"정말로 {provider.value} API 키를 삭제하시겠습니까? (yes/no)",
+            f"Do you want to delete {provider.value}? (yes/no)",
             choices=["yes", "no"],
             default="no",
         )
@@ -251,7 +249,7 @@ class DiaryApp:
             try:
                 self.credential_service.delete_credential(provider)
                 self.console.print(
-                    f"[green]✓[/green] {provider.value} API 키를 삭제했습니다."
+                    f"[green]✓[/green] {provider.value} API Key deleted."
                 )
             except ValueError as e:
-                self.console.print(f"[red]✗[/red] 오류: {e}")
+                self.console.print(f"[red]✗[/red] error: {e}")
