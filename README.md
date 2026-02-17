@@ -7,7 +7,7 @@ AI와 대화하며 작성하는 일기 앱
 - ✅ **AI API 키 관리**: OpenAI, Anthropic, Google AI 지원
 - ✅ **생성자 주입 방식**: 명시적 의존성 주입 (Constructor Injection)
 - ✅ **레이어드 아키텍처**: Domain, Data, Presentation 분리
-- 🚧 **AI 대화형 일기 작성**: 구현 예정
+- ✅ **AI 대화형 채팅**: AI와 자연스럽게 대화하며 하루 기록
 
 ## 빠른 시작
 
@@ -41,16 +41,34 @@ make dev
 
 ## 사용 예제
 
-### API 키 관리
+### 메인 기능
 
 ```bash
 # CLI 실행
-python main.py
+uv run python main.py
 
 # 메뉴에서 선택
-1. Write Diary          # 일기 작성 (구현 예정)
+1. Write Diary          # AI와 대화하며 하루 기록 ⭐
 2. Manage API Keys      # API 키 관리
-3. Exit
+3. Manage Preferences   # 사용자 설정 (일기 스타일 선택)
+4. Exit
+```
+
+### AI 채팅 기능
+
+```bash
+# Write Diary 선택 후
+AI: 안녕하세요! 오늘 하루는 어떠셨나요?
+You: 오늘은 프로젝트 마감이라 정신없었어요.
+
+AI: 프로젝트 마감이라 정말 바쁘셨겠네요. 어떤 프로젝트였나요?
+You: 새로운 기능 개발이었는데, 버그가 좀 많이 나와서...
+
+# 대화가 충분히 쌓이면 AI가 일기 작성 제안
+AI: 오늘 대화를 바탕으로 일기를 작성해드릴까요?
+
+# 종료: 'quit', 'exit', '그만'
+# → 대화 내용이 data/chats/ 폴더에 저장됨
 ```
 
 ### 프로그래밍 방식 사용

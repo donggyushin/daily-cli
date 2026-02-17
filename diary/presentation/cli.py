@@ -1,13 +1,15 @@
 """CLI 명령어 인터페이스"""
 
 import typer
+from typing import Optional
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 
-from diary.domain.services import CredentialService, UserPreferencesService
+from diary.domain.services import CredentialService, UserPreferencesService, ChatService
 from diary.presentation.preferences_ui import PreferencesUI
 from diary.presentation.api_key_ui import ApiKeyUI
+from diary.presentation.chat_ui import ChatUI
 
 
 class DiaryApp:
@@ -20,19 +22,28 @@ class DiaryApp:
         self,
         credential_service: CredentialService,
         preferences_service: UserPreferencesService,
+        chat_service: Optional[ChatService] = None,
     ):
         """
         Args:
             credential_service: AI 인증 정보 관리 서비스 (Domain Layer)
             preferences_service: 사용자 설정 관리 서비스 (Domain Layer)
+            chat_service: 채팅 비즈니스 로직 서비스 (Domain Layer, 선택적)
         """
         self.credential_service = credential_service
         self.preferences_service = preferences_service
+        self.chat_service = chat_service
         self.console = Console()
 
         # UI 컴포넌트 초기화
         self.preferences_ui = PreferencesUI(preferences_service, self.console)
         self.api_key_ui = ApiKeyUI(credential_service, self.console)
+
+        # ChatUI는 chat_service가 있을 때만 초기화
+        if chat_service:
+            self.chat_ui = ChatUI(chat_service, self.console)
+        else:
+            self.chat_ui = None
 
     def run(self):
         """애플리케이션 실행"""
@@ -98,9 +109,15 @@ class DiaryApp:
             raise typer.Exit(0)
 
     def _write_diary(self):
-        """일기 작성 시작"""
-        self.console.print("[bold green]일기 작성을 시작합니다...[/bold green]")
-        self.console.print("[dim]이 기능은 아직 구현 중입니다.[/dim]")
+        """일기 작성 시작 (ChatUI에 위임)"""
+        if not self.chat_service or not self.chat_ui:
+            self.console.print("[red]AI 설정이 없어 채팅을 시작할 수 없습니다.[/red]")
+            self.console.print("[yellow]먼저 API Key를 등록해주세요.[/yellow]")
+            self.console.input("\n[dim]Enter를 눌러 계속...[/dim]")
+            self._show_menu()
+            return
+
+        self.chat_ui.start_chat(on_back_callback=self._show_menu)
 
     def _manage_api_keys(self):
         """API 키 관리 메뉴 (ApiKeyUI에 위임)"""

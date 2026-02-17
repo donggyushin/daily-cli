@@ -1,5 +1,43 @@
 # 프로젝트 아키텍처 가이드
 
+## 개발 환경 설정
+
+### 패키지 매니저: uv
+
+이 프로젝트는 **uv**를 패키지 매니저로 사용합니다.
+
+```bash
+# 의존성 설치
+uv sync
+
+# 애플리케이션 실행
+uv run python main.py
+
+# 특정 명령 실행 (uv 가상환경 내에서)
+uv run <command>
+```
+
+**중요**: `pip install`이 아닌 `uv sync`를 사용하세요.
+
+### Docker 사용
+
+Docker를 사용한 실행도 지원합니다.
+
+```bash
+# 빌드
+make build
+
+# 실행
+make run
+
+# 개발 모드 (소스 코드 마운트)
+make dev
+```
+
+자세한 내용은 [README.md](./README.md) 참조.
+
+---
+
 ## 아키텍처 원칙
 
 이 프로젝트는 **레이어드 아키텍처(Layered Architecture)** + **의존성 역전 원칙(DIP)** 을 따릅니다.
@@ -52,6 +90,7 @@
 - `cli.py` - 메인 CLI 앱 (오케스트레이션만 담당)
 - `api_key_ui.py` - API Key 관리 UI
 - `preferences_ui.py` - 사용자 설정 UI
+- `chat_ui.py` - AI 채팅 UI ⭐ NEW
 
 **아키텍처 패턴** (UI 컴포넌트 분리):
 ```python
@@ -119,15 +158,44 @@ class WritingStyle(Enum):
         # EMOTIONAL_LITERARY + 예시 문장 → 강화된 프롬프트
 ```
 
+**ChatMessage** - 채팅 메시지 ⭐ NEW
+```python
+class ChatMessage:
+    role: MessageRole     # user, assistant, system
+    content: str
+    timestamp: datetime
+
+    def to_dict(self) -> dict:
+        """저장을 위한 직렬화"""
+```
+
+**ChatSession** - 채팅 세션 ⭐ NEW
+```python
+class ChatSession:
+    session_id: str
+    messages: List[ChatMessage]
+    created_at: datetime
+    is_active: bool
+
+    def add_message(self, role: MessageRole, content: str) -> None:
+        """비즈니스 로직: 메시지 추가"""
+
+    def get_conversation_history(self) -> List[dict]:
+        """AI API 호출용 대화 히스토리 반환"""
+```
+
 #### 2.2 Services (비즈니스 로직)
 - `CredentialService` - API Key 관리, 검증, 기본 AI 설정
 - `UserPreferencesService` - 사용자 설정 관리, 강화된 프롬프트 생성
+- `ChatService` - AI 대화 세션 관리, 메시지 전송/응답 처리 ⭐ NEW
 
 #### 2.3 Interfaces (Repository 인터페이스)
 Domain이 정의하고, Data Layer가 구현:
 - `CredentialRepositoryInterface`
 - `UserPreferencesRepositoryInterface`
 - `WritingStyleExamplesRepositoryInterface`
+- `AIClientInterface` - AI API 호출 추상화 ⭐ NEW
+- `ChatRepositoryInterface` - 채팅 저장소 추상화 ⭐ NEW
 
 **핵심 원칙**:
 - **Domain은 아무것도 의존하지 않음** - 가장 안쪽 레이어
@@ -183,7 +251,7 @@ class UserPreferencesService:
 **FileSystemUserPreferencesRepository**
 - 사용자 설정을 JSON 파일로 저장 (`data/user_preferences.json`)
 
-**FileSystemWritingStyleExamplesRepository** ⭐ 새로운 패턴
+**FileSystemWritingStyleExamplesRepository**
 - 스타일별 예시 문장을 텍스트 파일로 관리
 - `data/writing_examples/emotional_literary.txt`
 - 주석(`#`) 지원, 빈 줄 자동 필터링
@@ -206,6 +274,23 @@ class FileSystemWritingStyleExamplesRepository(WritingStyleExamplesRepositoryInt
                 if line.strip() and not line.strip().startswith("#")
             ]
 ```
+
+**FileSystemChatRepository** ⭐ NEW
+- 채팅 세션을 JSON 파일로 저장 (`data/chats/{session-id}.json`)
+- 활성 세션 추적 (`data/chats/active_session.json`)
+- 세션 목록 조회, 삭제 기능
+
+**OpenAIClient** ⭐ NEW
+- OpenAI GPT 모델 API 클라이언트 (기본: gpt-4o-mini)
+- `AIClientInterface` 구현
+
+**AnthropicClient** ⭐ NEW
+- Anthropic Claude 모델 API 클라이언트 (기본: claude-3-5-haiku)
+- `AIClientInterface` 구현
+
+**GoogleAIClient** ⭐ NEW
+- Google Gemini 모델 API 클라이언트 (기본: gemini-1.5-flash)
+- `AIClientInterface` 구현
 
 #### 3.2 확장 전략
 
@@ -286,8 +371,13 @@ from diary.data.repositories import (
     FileSystemCredentialRepository,
     FileSystemUserPreferencesRepository,
     FileSystemWritingStyleExamplesRepository,
+    FileSystemChatRepository,
+    OpenAIClient,
+    AnthropicClient,
+    GoogleAIClient,
 )
-from diary.domain.services import CredentialService, UserPreferencesService
+from diary.domain.services import CredentialService, UserPreferencesService, ChatService
+from diary.domain.entities import AIProvider
 from diary.presentation.cli import DiaryApp
 
 # Data Layer - Repository 구현체
@@ -302,8 +392,33 @@ preferences_service = UserPreferencesService(
     examples_repo  # 선택적 의존성
 )
 
+# AI Client 선택 (기본 AI 기준) ⭐ NEW
+default_ai = credential_service.get_default_credential()
+if default_ai:
+    if default_ai.provider == AIProvider.OPENAI:
+        ai_client = OpenAIClient(api_key=default_ai.api_key)
+    elif default_ai.provider == AIProvider.ANTHROPIC:
+        ai_client = AnthropicClient(api_key=default_ai.api_key)
+    elif default_ai.provider == AIProvider.GOOGLE:
+        ai_client = GoogleAIClient(api_key=default_ai.api_key)
+
+    # Chat Repository 및 Chat Service 생성
+    chat_repo = FileSystemChatRepository()
+    chat_service = ChatService(
+        chat_repo=chat_repo,
+        ai_client=ai_client,
+        preferences_service=preferences_service
+    )
+else:
+    # AI 설정이 없으면 None (첫 실행 시)
+    chat_service = None
+
 # Presentation Layer - CLI (Domain에만 의존)
-diary_app = DiaryApp(credential_service, preferences_service)
+diary_app = DiaryApp(
+    credential_service,
+    preferences_service,
+    chat_service  # 선택적 의존성 ⭐ NEW
+)
 
 # 실행
 diary_app.run()
@@ -323,39 +438,54 @@ daily-cli/
 ├── diary/
 │   ├── presentation/                    # Presentation Layer
 │   │   ├── __init__.py
-│   │   ├── cli.py                       # 메인 CLI (110줄, 간결함)
+│   │   ├── cli.py                       # 메인 CLI (오케스트레이터)
 │   │   ├── api_key_ui.py                # API Key 관리 UI
-│   │   └── preferences_ui.py            # 사용자 설정 UI
+│   │   ├── preferences_ui.py            # 사용자 설정 UI
+│   │   └── chat_ui.py                   # AI 채팅 UI ⭐ NEW
 │   ├── domain/                          # Domain Layer
 │   │   ├── entities/                    # 도메인 엔티티
 │   │   │   ├── __init__.py
 │   │   │   ├── ai_credential.py         # AI 인증 정보
 │   │   │   ├── user_preferences.py      # 사용자 설정
-│   │   │   └── writing_style.py         # 일기 작성 스타일
+│   │   │   ├── writing_style.py         # 일기 작성 스타일
+│   │   │   ├── chat_message.py          # 채팅 메시지 ⭐ NEW
+│   │   │   └── chat_session.py          # 채팅 세션 ⭐ NEW
 │   │   ├── services/                    # 비즈니스 로직
 │   │   │   ├── __init__.py
 │   │   │   ├── credential_service.py
-│   │   │   └── user_preferences_service.py
+│   │   │   ├── user_preferences_service.py
+│   │   │   └── chat_service.py          # 채팅 로직 ⭐ NEW
 │   │   └── interfaces/                  # Repository 인터페이스
 │   │       ├── __init__.py
 │   │       ├── credential_repository.py
 │   │       ├── user_preferences_repository.py
-│   │       └── writing_style_examples_repository.py
+│   │       ├── writing_style_examples_repository.py
+│   │       ├── ai_client.py             # AI API 인터페이스 ⭐ NEW
+│   │       └── chat_repository.py       # 채팅 저장소 인터페이스 ⭐ NEW
 │   └── data/                            # Data Layer
 │       └── repositories/                # Repository 구현체
 │           ├── __init__.py
 │           ├── file_credential_repository.py
 │           ├── file_user_preferences_repository.py
-│           └── file_writing_style_examples_repository.py
+│           ├── file_writing_style_examples_repository.py
+│           ├── file_chat_repository.py  # 채팅 JSON 저장 ⭐ NEW
+│           ├── openai_client.py         # OpenAI API 클라이언트 ⭐ NEW
+│           ├── anthropic_client.py      # Anthropic API 클라이언트 ⭐ NEW
+│           └── google_ai_client.py      # Google AI API 클라이언트 ⭐ NEW
 ├── data/                                # 실제 데이터 저장
 │   ├── credentials.json                 # AI API Keys
 │   ├── user_preferences.json            # 사용자 설정
-│   └── writing_examples/                # 예시 문장
-│       ├── README.md                    # 사용 가이드
-│       └── emotional_literary.txt       # 감성적 스타일 예시
+│   ├── writing_examples/                # 예시 문장
+│   │   ├── README.md                    # 사용 가이드
+│   │   └── emotional_literary.txt       # 감성적 스타일 예시
+│   └── chats/                           # 채팅 데이터 ⭐ NEW
+│       ├── {session-id}.json            # 각 세션 대화 기록
+│       └── active_session.json          # 현재 활성 세션
 ├── main.py                              # 애플리케이션 진입점 (DI 조립)
 ├── CLAUDE.md                            # 아키텍처 가이드
-├── requirements.txt
+├── pyproject.toml                       # 의존성 관리 (uv 사용)
+├── Dockerfile                           # Docker 설정
+├── Makefile                             # Docker 명령어
 └── README.md
 ```
 
@@ -401,6 +531,7 @@ Data: PostgreSQL + API Server (동일)
 - `DiaryApp`: 메인 플로우 오케스트레이션만
 - `ApiKeyUI`: API Key 관리 UI만
 - `PreferencesUI`: 사용자 설정 UI만
+- `ChatUI`: AI 채팅 UI만 ⭐ NEW
 
 ### 2. 의존성 역전 원칙 (DIP)
 - Domain이 인터페이스 정의

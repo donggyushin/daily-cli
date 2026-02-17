@@ -10,8 +10,13 @@ from diary.data.repositories import (
     FileSystemCredentialRepository,
     FileSystemUserPreferencesRepository,
     FileSystemWritingStyleExamplesRepository,
+    FileSystemChatRepository,
+    OpenAIClient,
+    AnthropicClient,
+    GoogleAIClient,
 )
-from diary.domain.services import CredentialService, UserPreferencesService
+from diary.domain.services import CredentialService, UserPreferencesService, ChatService
+from diary.domain.entities import AIProvider
 from diary.presentation.cli import DiaryApp
 
 app = typer.Typer()
@@ -37,8 +42,35 @@ def main(ctx: typer.Context):
         credential_service = CredentialService(credential_repo)
         preferences_service = UserPreferencesService(preferences_repo, examples_repo)
 
+        # AI Client 선택 (기본 AI 기준)
+        default_ai = credential_service.get_default_credential()
+        if default_ai:
+            if default_ai.provider == AIProvider.OPENAI:
+                ai_client = OpenAIClient(api_key=default_ai.api_key)
+            elif default_ai.provider == AIProvider.ANTHROPIC:
+                ai_client = AnthropicClient(api_key=default_ai.api_key)
+            elif default_ai.provider == AIProvider.GOOGLE:
+                ai_client = GoogleAIClient(api_key=default_ai.api_key)
+            else:
+                ai_client = None
+
+            # Chat Repository 및 Chat Service 생성
+            chat_repo = FileSystemChatRepository()
+            chat_service = ChatService(
+                chat_repo=chat_repo,
+                ai_client=ai_client,
+                preferences_service=preferences_service
+            )
+        else:
+            # AI 설정이 없으면 None (첫 실행 시)
+            chat_service = None
+
         # Presentation Layer - CLI (Domain에만 의존)
-        diary_app = DiaryApp(credential_service, preferences_service)
+        diary_app = DiaryApp(
+            credential_service,
+            preferences_service,
+            chat_service
+        )
 
         # 실행
         diary_app.run()

@@ -1,0 +1,57 @@
+"""Anthropic Claude API 클라이언트 구현"""
+
+from typing import List
+from anthropic import Anthropic
+
+from diary.domain.interfaces.ai_client import AIClientInterface
+
+
+class AnthropicClient(AIClientInterface):
+    """Anthropic Claude 모델을 사용하는 AI 클라이언트"""
+
+    def __init__(self, api_key: str, model: str = "claude-3-5-haiku-20241022"):
+        """
+        Args:
+            api_key: Anthropic API 키
+            model: 사용할 모델 (기본: claude-3-5-haiku, 빠르고 저렴)
+        """
+        self.client = Anthropic(api_key=api_key)
+        self.model = model
+
+    def chat(self, messages: List[dict]) -> str:
+        """
+        Anthropic Messages API 호출
+
+        Args:
+            messages: [{"role": "user", "content": "..."}, ...]
+
+        Returns:
+            AI 응답 텍스트
+
+        Raises:
+            Exception: API 호출 실패 시
+        """
+        try:
+            # Anthropic API는 system 메시지를 별도 파라미터로 받음
+            system_message = None
+            conversation_messages = []
+
+            for msg in messages:
+                if msg["role"] == "system":
+                    system_message = msg["content"]
+                else:
+                    conversation_messages.append(msg)
+
+            # API 호출
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=1000,
+                temperature=0.7,
+                system=system_message if system_message else "",
+                messages=conversation_messages
+            )
+
+            return response.content[0].text
+
+        except Exception as e:
+            raise Exception(f"Anthropic API 호출 실패: {str(e)}")
