@@ -79,8 +79,9 @@ class FileSystemChatRepository(ChatRepositoryInterface):
                 if session_id:
                     return self.get_session(session_id)
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            print(e)
             # active_session.json이 손상된 경우 파일 삭제
-            print(f"Warning: Corrupted active_session.json, removing it.")
+            print("Warning: Corrupted active_session.json, removing it.")
             self.active_session_file.unlink()
 
         return None
