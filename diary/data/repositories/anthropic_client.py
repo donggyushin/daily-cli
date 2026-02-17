@@ -2,6 +2,7 @@
 
 from typing import List
 from anthropic import Anthropic
+from anthropic.types import TextBlock
 
 from diary.domain.interfaces.ai_client import AIClientInterface
 
@@ -58,7 +59,13 @@ class AnthropicClient(AIClientInterface):
                 messages=conversation_messages,
             )
 
-            return response.content[0].text
+            # TextBlock만 추출 (타입 안전성)
+            for block in response.content:
+                if isinstance(block, TextBlock):
+                    return block.text
+
+            # TextBlock이 없으면 빈 문자열 반환
+            return ""
 
         except Exception as e:
             raise Exception(f"Anthropic API 호출 실패: {str(e)}")
