@@ -59,7 +59,7 @@ class DiaryApp:
         self.console.print("  3. Google (Gemini)")
         self.console.print()
 
-        choice = Prompt.ask("Choice", choices=["1", "2", "3"], default="1")
+        choice = Prompt.ask("Choices", choices=["1", "2", "3"], default="1")
 
         provider_map = {
             "1": (AIProvider.OPENAI, "OpenAI"),
