@@ -23,4 +23,4 @@ rebuild: clean build ## 완전 재빌드
 
 # 로컬 실행 (비교용)
 local: ## 로컬에서 uv run 실행
-	uv run diary
+	uv run main.py
