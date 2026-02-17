@@ -29,8 +29,12 @@ dist/
 .DS_Store
 Thumbs.db
 
-# data/
-credentials.json
-user_preferences.json
+# User data - 개인 정보이므로 git에 추가하지 않음
+data/credentials.json
+data/user_preferences.json
+data/chats/*
+!data/chats/.gitkeep
+
+# Database files
 *.db
 *.sqlite
