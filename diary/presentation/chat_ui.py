@@ -71,8 +71,12 @@ class ChatUI:
 
             # AI 응답 받기
             try:
-                self.console.print("\n[dim]AI가 생각 중...[/dim]")
-                ai_response, is_diary = self.chat_service.send_message(user_input)
+                # 스피너 애니메이션과 함께 AI 응답 대기
+                with self.console.status(
+                    "[cyan]AI가 답변을 작성하고 있습니다[/cyan]",
+                    spinner="simpleDots"
+                ):
+                    ai_response, is_diary = self.chat_service.send_message(user_input)
 
                 # 일기가 생성된 경우 특별 처리
                 if is_diary:
