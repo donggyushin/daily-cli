@@ -13,7 +13,7 @@ class AnthropicClient(AIClientInterface):
         """
         Args:
             api_key: Anthropic API 키
-            model: 사용할 모델 (기본: claude-haiku-4.5, 빠르고 저렴)
+            model: 사용할 모델 (기본: claude-sonnet-4-5, Smart and general)
         """
         self.client = Anthropic(api_key=api_key)
         self.model = model
