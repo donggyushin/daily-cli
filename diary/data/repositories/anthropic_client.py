@@ -9,7 +9,7 @@ from diary.domain.interfaces.ai_client import AIClientInterface
 class AnthropicClient(AIClientInterface):
     """Anthropic Claude 모델을 사용하는 AI 클라이언트"""
 
-    def __init__(self, api_key: str, model: str = "claude-haiku-4-5-20251001"):
+    def __init__(self, api_key: str, model: str = "claude-sonnet-4-5-20250929"):
         """
         Args:
             api_key: Anthropic API 키

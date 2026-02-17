@@ -20,3 +20,9 @@ diary = "main:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["diary"]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
