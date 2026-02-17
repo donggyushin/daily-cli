@@ -35,18 +35,19 @@ class FileSystemChatRepository(ChatRepositoryInterface):
             if session.is_active:
                 with open(self.active_session_file, "w", encoding="utf-8") as f:
                     json.dump({"session_id": session.session_id}, f, ensure_ascii=False)
+            else:
+                # 비활성화된 세션이 현재 활성 세션이면 active_session.json 제거
+                if self.active_session_file.exists():
+                    with open(self.active_session_file, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        if data.get("session_id") == session.session_id:
+                            self.active_session_file.unlink()
+
         except (UnicodeEncodeError, TypeError) as e:
             print(f"Warning: Failed to save session {session.session_id}: {e}")
             # 손상된 파일 삭제
             if session_file.exists():
                 session_file.unlink()
-        else:
-            # 비활성화된 세션이 현재 활성 세션이면 active_session.json 제거
-            if self.active_session_file.exists():
-                with open(self.active_session_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    if data.get("session_id") == session.session_id:
-                        self.active_session_file.unlink()
 
     def get_session(self, session_id: str) -> Optional[ChatSession]:
         """특정 세션 조회"""
