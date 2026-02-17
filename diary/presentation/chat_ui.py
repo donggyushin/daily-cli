@@ -54,6 +54,8 @@ class ChatUI:
             # 사용자 입력
             try:
                 user_input = Prompt.ask("\n[bold cyan]You[/bold cyan]")
+                # UTF-8 인코딩 문제 방지: 서로게이트 문자 제거
+                user_input = user_input.encode('utf-8', errors='ignore').decode('utf-8')
             except (KeyboardInterrupt, EOFError):
                 on_back_callback()
                 return

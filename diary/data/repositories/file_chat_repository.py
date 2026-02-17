@@ -26,14 +26,20 @@ class FileSystemChatRepository(ChatRepositoryInterface):
         """세션을 JSON 파일로 저장"""
         session_file = self.data_dir / f"{session.session_id}.json"
 
-        # 세션 데이터 저장
-        with open(session_file, "w", encoding="utf-8") as f:
-            json.dump(session.to_dict(), f, indent=2, ensure_ascii=False)
+        try:
+            # 세션 데이터 저장
+            with open(session_file, "w", encoding="utf-8") as f:
+                json.dump(session.to_dict(), f, indent=2, ensure_ascii=False)
 
-        # 활성 세션인 경우 active_session.json 업데이트
-        if session.is_active:
-            with open(self.active_session_file, "w", encoding="utf-8") as f:
-                json.dump({"session_id": session.session_id}, f)
+            # 활성 세션인 경우 active_session.json 업데이트
+            if session.is_active:
+                with open(self.active_session_file, "w", encoding="utf-8") as f:
+                    json.dump({"session_id": session.session_id}, f, ensure_ascii=False)
+        except (UnicodeEncodeError, TypeError) as e:
+            print(f"Warning: Failed to save session {session.session_id}: {e}")
+            # 손상된 파일 삭제
+            if session_file.exists():
+                session_file.unlink()
         else:
             # 비활성화된 세션이 현재 활성 세션이면 active_session.json 제거
             if self.active_session_file.exists():
@@ -49,20 +55,31 @@ class FileSystemChatRepository(ChatRepositoryInterface):
         if not session_file.exists():
             return None
 
-        with open(session_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return ChatSession.from_dict(data)
+        try:
+            with open(session_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return ChatSession.from_dict(data)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            # JSON 파일이 손상된 경우 None 반환하고 파일 삭제
+            print(f"Warning: Corrupted session file {session_id}, removing it.")
+            session_file.unlink()
+            return None
 
     def get_active_session(self) -> Optional[ChatSession]:
         """현재 활성화된 세션 반환"""
         if not self.active_session_file.exists():
             return None
 
-        with open(self.active_session_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            session_id = data.get("session_id")
-            if session_id:
-                return self.get_session(session_id)
+        try:
+            with open(self.active_session_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                session_id = data.get("session_id")
+                if session_id:
+                    return self.get_session(session_id)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            # active_session.json이 손상된 경우 파일 삭제
+            print(f"Warning: Corrupted active_session.json, removing it.")
+            self.active_session_file.unlink()
 
         return None
 

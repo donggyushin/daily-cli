@@ -32,9 +32,21 @@ class OpenAIClient(AIClientInterface):
             Exception: API 호출 실패 시
         """
         try:
+            # UTF-8 인코딩 문제 방지: 서로게이트 문자 제거
+            cleaned_messages = []
+            for msg in messages:
+                content = msg["content"]
+                if isinstance(content, str):
+                    content = content.encode('utf-8', errors='ignore').decode('utf-8')
+
+                cleaned_messages.append({
+                    "role": msg["role"],
+                    "content": content
+                })
+
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=messages,
+                messages=cleaned_messages,
                 temperature=0.7,
                 max_tokens=1000
             )

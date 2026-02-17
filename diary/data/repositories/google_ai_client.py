@@ -38,10 +38,15 @@ class GoogleAIClient(AIClientInterface):
             last_user_message = None
 
             for msg in messages:
+                # UTF-8 인코딩 문제 방지: 서로게이트 문자 제거
+                content = msg["content"]
+                if isinstance(content, str):
+                    content = content.encode('utf-8', errors='ignore').decode('utf-8')
+
                 if msg["role"] == "system":
-                    system_instruction = msg["content"]
+                    system_instruction = content
                 elif msg["role"] == "user":
-                    last_user_message = msg["content"]
+                    last_user_message = content
                 elif msg["role"] == "assistant":
                     if last_user_message:
                         chat_history.append({
@@ -51,7 +56,7 @@ class GoogleAIClient(AIClientInterface):
                         last_user_message = None
                     chat_history.append({
                         "role": "model",
-                        "parts": [msg["content"]]
+                        "parts": [content]
                     })
 
             # 채팅 세션 시작

@@ -9,11 +9,11 @@ from diary.domain.interfaces.ai_client import AIClientInterface
 class AnthropicClient(AIClientInterface):
     """Anthropic Claude 모델을 사용하는 AI 클라이언트"""
 
-    def __init__(self, api_key: str, model: str = "claude-3-5-haiku-20241022"):
+    def __init__(self, api_key: str, model: str = "claude-haiku-4-5-20251001"):
         """
         Args:
             api_key: Anthropic API 키
-            model: 사용할 모델 (기본: claude-3-5-haiku, 빠르고 저렴)
+            model: 사용할 모델 (기본: claude-haiku-4.5, 빠르고 저렴)
         """
         self.client = Anthropic(api_key=api_key)
         self.model = model
@@ -37,10 +37,18 @@ class AnthropicClient(AIClientInterface):
             conversation_messages = []
 
             for msg in messages:
+                # UTF-8 인코딩 문제 방지: 서로게이트 문자 제거
+                content = msg["content"]
+                if isinstance(content, str):
+                    content = content.encode('utf-8', errors='ignore').decode('utf-8')
+
                 if msg["role"] == "system":
-                    system_message = msg["content"]
+                    system_message = content
                 else:
-                    conversation_messages.append(msg)
+                    conversation_messages.append({
+                        "role": msg["role"],
+                        "content": content
+                    })
 
             # API 호출
             response = self.client.messages.create(

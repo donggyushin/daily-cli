@@ -45,6 +45,8 @@ class ChatService:
 
         # AI의 첫 인사 생성
         greeting = self._get_ai_greeting(session)
+        # UTF-8 정제
+        greeting = greeting.encode('utf-8', errors='ignore').decode('utf-8')
         session.add_message(MessageRole.ASSISTANT, greeting)
 
         # 세션 저장
@@ -65,6 +67,9 @@ class ChatService:
         Raises:
             Exception: AI API 호출 실패 시
         """
+        # UTF-8 인코딩 문제 방지: 서로게이트 문자 제거
+        user_message = user_message.encode('utf-8', errors='ignore').decode('utf-8')
+
         # 활성 세션 가져오기 (없으면 새로 생성)
         session = self.chat_repo.get_active_session()
         if not session:
@@ -76,6 +81,9 @@ class ChatService:
         # AI 응답 생성 (Full Context 전달)
         conversation_history = session.get_conversation_history()
         ai_response = self.ai_client.chat(conversation_history)
+
+        # AI 응답도 UTF-8 정제
+        ai_response = ai_response.encode('utf-8', errors='ignore').decode('utf-8')
 
         # AI 응답 저장
         session.add_message(MessageRole.ASSISTANT, ai_response)
