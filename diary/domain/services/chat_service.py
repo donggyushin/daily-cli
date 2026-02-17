@@ -54,7 +54,7 @@ class ChatService:
 
         return session
 
-    def send_message(self, user_message: str) -> str:
+    def send_message(self, user_message: str) -> tuple[str, bool]:
         """
         사용자 메시지 전송 → AI 응답 받기
 
@@ -62,7 +62,9 @@ class ChatService:
             user_message: 사용자 입력 메시지
 
         Returns:
-            AI 응답 텍스트
+            tuple[AI 응답 텍스트, 일기 생성 여부]
+            - (응답 내용, True): 일기가 생성됨
+            - (응답 내용, False): 일반 대화/질문
 
         Raises:
             Exception: AI API 호출 실패 시
@@ -85,13 +87,16 @@ class ChatService:
         # AI 응답도 UTF-8 정제
         ai_response = ai_response.encode('utf-8', errors='ignore').decode('utf-8')
 
+        # 일기 생성 여부 확인
+        is_diary = self._is_diary_generated(ai_response)
+
         # AI 응답 저장
         session.add_message(MessageRole.ASSISTANT, ai_response)
 
         # 세션 저장
         self.chat_repo.save_session(session)
 
-        return ai_response
+        return ai_response, is_diary
 
     def get_current_session(self) -> Optional[ChatSession]:
         """
@@ -143,6 +148,13 @@ class ChatService:
 
 중요:
 - 사용자가 충분히 이야기했다고 판단되면, "오늘 대화를 바탕으로 일기를 작성해드릴까요?"라고 물어보세요.
+- 사용자가 일기 작성을 요청하면, 반드시 다음 형식으로 응답하세요:
+
+[DIARY_START]
+(여기에 작성된 일기 내용)
+[DIARY_END]
+
+- 일기가 아닌 일반 대화/질문은 위 형식을 사용하지 마세요.
 - 항상 한국어로 대화하세요.
 - 짧고 간결하게 한 번에 하나의 질문만 하세요.
 """
@@ -163,3 +175,15 @@ class ChatService:
             {"role": "user", "content": "대화를 시작해줘. 간단하고 친근하게 인사하고 오늘 하루에 대해 물어봐줘."}
         ]
         return self.ai_client.chat(greeting_prompt)
+
+    def _is_diary_generated(self, ai_response: str) -> bool:
+        """
+        AI 응답이 일기 생성인지 확인
+
+        Args:
+            ai_response: AI 응답 텍스트
+
+        Returns:
+            일기 생성 여부
+        """
+        return "[DIARY_START]" in ai_response and "[DIARY_END]" in ai_response

@@ -72,8 +72,13 @@ class ChatUI:
             # AI 응답 받기
             try:
                 self.console.print("\n[dim]AI가 생각 중...[/dim]")
-                ai_response = self.chat_service.send_message(user_input)
-                self._display_ai_message(ai_response)
+                ai_response, is_diary = self.chat_service.send_message(user_input)
+
+                # 일기가 생성된 경우 특별 처리
+                if is_diary:
+                    self._display_diary(ai_response)
+                else:
+                    self._display_ai_message(ai_response)
 
             except Exception as e:
                 self.console.print(f"\n[red]오류 발생: {str(e)}[/red]")
@@ -88,6 +93,25 @@ class ChatUI:
             border_style="green",
             padding=(1, 2)
         ))
+
+    def _display_diary(self, content: str):
+        """일기 생성 시 특별하게 표시"""
+        # [DIARY_START]와 [DIARY_END] 마커 제거
+        diary_content = content
+        if "[DIARY_START]" in content and "[DIARY_END]" in content:
+            start_idx = content.find("[DIARY_START]") + len("[DIARY_START]")
+            end_idx = content.find("[DIARY_END]")
+            diary_content = content[start_idx:end_idx].strip()
+
+        self.console.print()
+        self.console.print(Panel(
+            Markdown(diary_content),
+            title="[bold yellow]📖 일기가 작성되었습니다![/bold yellow]",
+            border_style="yellow",
+            padding=(1, 2)
+        ))
+        self.console.print("\n[green]✓ 일기 초안이 완성되었습니다![/green]")
+        self.console.print("[dim]계속 대화하거나 'quit'로 종료하세요.[/dim]")
 
     def _display_recent_messages(self, session, count: int = 3):
         """최근 메시지 몇 개 표시"""
