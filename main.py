@@ -9,6 +9,7 @@ import typer
 from diary.data.repositories import (
     FileSystemCredentialRepository,
     FileSystemUserPreferencesRepository,
+    FileSystemWritingStyleExamplesRepository,
 )
 from diary.domain.services import CredentialService, UserPreferencesService
 from diary.presentation.cli import DiaryApp
@@ -30,10 +31,11 @@ def main(ctx: typer.Context):
         # Data Layer - Repository 구현체
         credential_repo = FileSystemCredentialRepository()
         preferences_repo = FileSystemUserPreferencesRepository()
+        examples_repo = FileSystemWritingStyleExamplesRepository()
 
         # Domain Layer - Business Logic (인터페이스에만 의존)
         credential_service = CredentialService(credential_repo)
-        preferences_service = UserPreferencesService(preferences_repo)
+        preferences_service = UserPreferencesService(preferences_repo, examples_repo)
 
         # Presentation Layer - CLI (Domain에만 의존)
         diary_app = DiaryApp(credential_service, preferences_service)

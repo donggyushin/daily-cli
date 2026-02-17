@@ -29,8 +29,8 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Data
-credentials.json
 # data/
+credentials.json
+user_preferences.json
 *.db
 *.sqlite

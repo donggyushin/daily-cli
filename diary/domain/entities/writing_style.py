@@ -31,10 +31,16 @@ class WritingStyle(Enum):
         }
         return descriptions[self]
 
-    def get_prompt_instruction(self) -> str:
+    def get_prompt_instruction(self, examples: list[str] | None = None) -> str:
         """AI에게 전달할 프롬프트 지시사항
 
         각 스타일에 맞는 일기 작성 방식을 AI에게 설명
+
+        Args:
+            examples: 추가 예시 문장 리스트 (EMOTIONAL_LITERARY 스타일에서 활용)
+
+        Returns:
+            AI 프롬프트 지시사항
         """
         instructions = {
             WritingStyle.OBJECTIVE_THIRD_PERSON: (
@@ -53,7 +59,19 @@ class WritingStyle(Enum):
                 "예: '긴 회의들 사이로 피로가 밀려왔다.'"
             ),
         }
-        return instructions[self]
+
+        base_instruction = instructions[self]
+
+        # EMOTIONAL_LITERARY 스타일이고 예시가 있으면 강화된 프롬프트 생성
+        if self == WritingStyle.EMOTIONAL_LITERARY and examples:
+            examples_text = "\n".join([f"- {ex}" for ex in examples])
+            return (
+                f"{base_instruction}\n\n"
+                f"다음은 참고할 수 있는 문학적 표현 예시입니다:\n{examples_text}\n\n"
+                f"이러한 스타일을 참고하여 깊이 있고 감성적인 일기를 작성해주세요."
+            )
+
+        return base_instruction
 
 
 @dataclass
