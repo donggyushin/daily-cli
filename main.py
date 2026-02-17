@@ -44,26 +44,25 @@ def main(ctx: typer.Context):
 
         # AI Client 선택 (기본 AI 기준)
         default_ai = credential_service.get_default_credential()
+        chat_service = None
+
         if default_ai:
+            ai_client = None
             if default_ai.provider == AIProvider.OPENAI:
                 ai_client = OpenAIClient(api_key=default_ai.api_key)
             elif default_ai.provider == AIProvider.ANTHROPIC:
                 ai_client = AnthropicClient(api_key=default_ai.api_key)
             elif default_ai.provider == AIProvider.GOOGLE:
                 ai_client = GoogleAIClient(api_key=default_ai.api_key)
-            else:
-                ai_client = None
 
-            # Chat Repository 및 Chat Service 생성
-            chat_repo = FileSystemChatRepository()
-            chat_service = ChatService(
-                chat_repo=chat_repo,
-                ai_client=ai_client,
-                preferences_service=preferences_service,
-            )
-        else:
-            # AI 설정이 없으면 None (첫 실행 시)
-            chat_service = None
+            # ai_client가 성공적으로 생성된 경우에만 Chat Service 생성
+            if ai_client:
+                chat_repo = FileSystemChatRepository()
+                chat_service = ChatService(
+                    chat_repo=chat_repo,
+                    ai_client=ai_client,
+                    preferences_service=preferences_service,
+                )
 
         # Presentation Layer - CLI (Domain에만 의존)
         diary_app = DiaryApp(credential_service, preferences_service, chat_service)
