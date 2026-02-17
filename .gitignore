@@ -30,6 +30,7 @@ dist/
 Thumbs.db
 
 # Data
-data/
+credentials.json
+# data/
 *.db
 *.sqlite

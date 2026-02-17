@@ -1,0 +1,41 @@
+"""애플리케이션 진입점 (Dependency Injection 조립)
+
+모든 레이어의 의존성을 조립하고 앱을 시작합니다.
+이 파일만 모든 레이어를 알고 있습니다.
+"""
+
+import typer
+
+from diary.data.repositories import FileSystemCredentialRepository
+from diary.domain.services import CredentialService
+from diary.presentation.cli import DiaryApp
+
+app = typer.Typer()
+
+
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context):
+    """Daily CLI - AI 일기 작성 도우미
+
+    레이어드 아키텍처 + 의존성 주입 패턴:
+    1. Data Layer 구현체 생성
+    2. Domain Layer 서비스에 주입
+    3. Presentation Layer에 주입
+    """
+    if ctx.invoked_subcommand is None:
+        # 의존성 조립 (Dependency Assembly)
+        # Data Layer - Repository 구현체
+        credential_repo = FileSystemCredentialRepository()
+
+        # Domain Layer - Business Logic (인터페이스에만 의존)
+        credential_service = CredentialService(credential_repo)
+
+        # Presentation Layer - CLI (Domain에만 의존)
+        diary_app = DiaryApp(credential_service)
+
+        # 실행
+        diary_app.run()
+
+
+if __name__ == "__main__":
+    app()
