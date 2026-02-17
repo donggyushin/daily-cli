@@ -8,6 +8,7 @@ from typing import Optional
 from diary.domain.entities.user_preferences import UserPreferences
 from diary.domain.entities.writing_style import WritingStyle, WritingStyleInfo
 from diary.domain.interfaces.user_preferences_repository import UserPreferencesRepositoryInterface
+from diary.domain.interfaces.writing_style_examples_repository import WritingStyleExamplesRepositoryInterface
 
 
 class UserPreferencesService:
@@ -18,15 +19,22 @@ class UserPreferencesService:
 
     Attributes:
         preferences_repo: 사용자 설정 저장소 인터페이스
+        examples_repo: 스타일 예시 문장 저장소 인터페이스 (선택적)
     """
 
-    def __init__(self, preferences_repo: UserPreferencesRepositoryInterface):
+    def __init__(
+        self,
+        preferences_repo: UserPreferencesRepositoryInterface,
+        examples_repo: Optional[WritingStyleExamplesRepositoryInterface] = None,
+    ):
         """서비스 초기화
 
         Args:
             preferences_repo: 사용자 설정 저장소 (인터페이스)
+            examples_repo: 스타일 예시 문장 저장소 (인터페이스, 선택적)
         """
         self.preferences_repo = preferences_repo
+        self.examples_repo = examples_repo
 
     def get_preferences(self) -> UserPreferences:
         """사용자 설정 조회
@@ -75,12 +83,21 @@ class UserPreferencesService:
         """현재 스타일의 AI 프롬프트 지시사항 반환
 
         AI에게 일기를 작성하도록 요청할 때 사용할 지시사항입니다.
+        EMOTIONAL_LITERARY 스타일인 경우, 예시 문장을 포함한 강화된 프롬프트를 생성합니다.
 
         Returns:
             프롬프트 지시사항
         """
         preferences = self.get_preferences()
-        return preferences.get_style_prompt_instruction()
+        current_style = preferences.writing_style
+
+        # 예시 문장 저장소가 있으면 예시를 로드
+        examples = []
+        if self.examples_repo:
+            examples = self.examples_repo.get_examples(current_style)
+
+        # 스타일의 프롬프트 지시사항 생성 (예시 포함)
+        return current_style.get_prompt_instruction(examples)
 
     def get_all_available_styles(self) -> list[WritingStyleInfo]:
         """사용 가능한 모든 스타일 정보 반환
