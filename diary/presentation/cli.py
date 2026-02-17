@@ -69,15 +69,17 @@ class DiaryApp:
         provider, provider_name = provider_map[choice]
 
         self.console.print()
-        self.console.print(f"[dim]{provider_name} API 키를 입력하세요.[/dim]")
-        self.console.print(f"[dim]API 키는 {provider_name} 웹사이트에서 발급받을 수 있습니다.[/dim]")
+        self.console.print(f"[dim]{provider_name} Input API Key.[/dim]")
+        self.console.print(
+            f"[dim]You can get API Key from {provider_name} website.[/dim]"
+        )
         self.console.print()
 
         api_key = Prompt.ask(f"{provider_name} API Key", password=True)
 
         # 형식 검증
         if not self.credential_service.validate_api_key_format(provider, api_key):
-            self.console.print(f"[red]✗[/red] 올바르지 않은 API 키 형식입니다.")
+            self.console.print("[red]✗[/red] Incorrect format of API Key.")
             return False
 
         # 저장
@@ -88,12 +90,12 @@ class DiaryApp:
                 name=None,
             )
             self.console.print(
-                f"[green]✓[/green] {provider_name} API 키가 저장되었습니다!"
+                f"[green]✓[/green] {provider_name} API saved successfully!"
             )
-            self.console.print(f"[dim]마스킹된 키: {credential.mask_api_key()}[/dim]")
+            self.console.print(f"[dim]Maked Key: {credential.mask_api_key()}[/dim]")
             return True
         except ValueError as e:
-            self.console.print(f"[red]✗[/red] 오류: {e}")
+            self.console.print(f"[red]✗[/red] error: {e}")
             return False
 
     def _show_menu(self):
@@ -111,7 +113,7 @@ class DiaryApp:
         default_cred = self.credential_service.get_default_credential()
         if default_cred:
             self.console.print(
-                f"[dim]현재 사용 중인 AI: {default_cred.provider.value} "
+                f"[dim]AI current used: {default_cred.provider.value} "
                 f"({default_cred.mask_api_key()})[/dim]"
             )
             self.console.print()
@@ -130,7 +132,7 @@ class DiaryApp:
         elif choice == "2":
             self._manage_api_keys()
         elif choice == "3":
-            self.console.print("[dim]안녕히 가세요![/dim]")
+            self.console.print("[dim]GoodBye![/dim]")
             raise typer.Exit(0)
 
     def _write_diary(self):
@@ -213,7 +215,9 @@ class DiaryApp:
         provider = provider_map[choice]
         try:
             self.credential_service.set_default_provider(provider)
-            self.console.print(f"[green]✓[/green] 기본 AI를 {provider.value}로 변경했습니다.")
+            self.console.print(
+                f"[green]✓[/green] 기본 AI를 {provider.value}로 변경했습니다."
+            )
         except ValueError as e:
             self.console.print(f"[red]✗[/red] 오류: {e}")
 
@@ -246,6 +250,8 @@ class DiaryApp:
         if confirm == "yes":
             try:
                 self.credential_service.delete_credential(provider)
-                self.console.print(f"[green]✓[/green] {provider.value} API 키를 삭제했습니다.")
+                self.console.print(
+                    f"[green]✓[/green] {provider.value} API 키를 삭제했습니다."
+                )
             except ValueError as e:
                 self.console.print(f"[red]✗[/red] 오류: {e}")
