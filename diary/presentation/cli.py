@@ -7,7 +7,8 @@ from rich.panel import Panel
 from rich.table import Table
 
 from diary.domain.entities import AIProvider
-from diary.domain.services import CredentialService
+from diary.domain.services import CredentialService, UserPreferencesService
+from diary.presentation.preferences_ui import PreferencesUI
 
 
 class DiaryApp:
@@ -16,13 +17,22 @@ class DiaryApp:
     생성자 주입(Constructor Injection)을 통해 의존성을 받습니다.
     """
 
-    def __init__(self, credential_service: CredentialService):
+    def __init__(
+        self,
+        credential_service: CredentialService,
+        preferences_service: UserPreferencesService,
+    ):
         """
         Args:
             credential_service: AI 인증 정보 관리 서비스 (Domain Layer)
+            preferences_service: 사용자 설정 관리 서비스 (Domain Layer)
         """
         self.credential_service = credential_service
+        self.preferences_service = preferences_service
         self.console = Console()
+
+        # UI 컴포넌트 초기화
+        self.preferences_ui = PreferencesUI(preferences_service, self.console)
 
     def run(self):
         """애플리케이션 실행"""
@@ -122,16 +132,19 @@ class DiaryApp:
         self.console.print("[bold]What do you want to do?[/bold]")
         self.console.print("  1. Write Diary")
         self.console.print("  2. Manage API Keys")
-        self.console.print("  3. Exit")
+        self.console.print("  3. Manage Preferences")
+        self.console.print("  4. Exit")
         self.console.print()
 
-        choice = Prompt.ask("Choice", choices=["1", "2", "3"], default="1")
+        choice = Prompt.ask("Choice", choices=["1", "2", "3", "4"], default="1")
 
         if choice == "1":
             self._write_diary()
         elif choice == "2":
             self._manage_api_keys()
         elif choice == "3":
+            self._manage_preferences()
+        elif choice == "4":
             self.console.print("[dim]GoodBye![/dim]")
             raise typer.Exit(0)
 
@@ -253,3 +266,7 @@ class DiaryApp:
                 )
             except ValueError as e:
                 self.console.print(f"[red]✗[/red] error: {e}")
+
+    def _manage_preferences(self):
+        """사용자 설정 관리 메뉴 (PreferencesUI에 위임)"""
+        self.preferences_ui.show_preferences_menu(on_back_callback=self._show_menu)

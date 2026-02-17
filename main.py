@@ -6,8 +6,11 @@
 
 import typer
 
-from diary.data.repositories import FileSystemCredentialRepository
-from diary.domain.services import CredentialService
+from diary.data.repositories import (
+    FileSystemCredentialRepository,
+    FileSystemUserPreferencesRepository,
+)
+from diary.domain.services import CredentialService, UserPreferencesService
 from diary.presentation.cli import DiaryApp
 
 app = typer.Typer()
@@ -26,12 +29,14 @@ def main(ctx: typer.Context):
         # 의존성 조립 (Dependency Assembly)
         # Data Layer - Repository 구현체
         credential_repo = FileSystemCredentialRepository()
+        preferences_repo = FileSystemUserPreferencesRepository()
 
         # Domain Layer - Business Logic (인터페이스에만 의존)
         credential_service = CredentialService(credential_repo)
+        preferences_service = UserPreferencesService(preferences_repo)
 
         # Presentation Layer - CLI (Domain에만 의존)
-        diary_app = DiaryApp(credential_service)
+        diary_app = DiaryApp(credential_service, preferences_service)
 
         # 실행
         diary_app.run()
