@@ -7,8 +7,12 @@ from typing import Optional
 
 from diary.domain.entities.user_preferences import UserPreferences
 from diary.domain.entities.writing_style import WritingStyle, WritingStyleInfo
-from diary.domain.interfaces.user_preferences_repository import UserPreferencesRepositoryInterface
-from diary.domain.interfaces.writing_style_examples_repository import WritingStyleExamplesRepositoryInterface
+from diary.domain.interfaces.user_preferences_repository import (
+    UserPreferencesRepositoryInterface,
+)
+from diary.domain.interfaces.writing_style_examples_repository import (
+    WritingStyleExamplesRepositoryInterface,
+)
 
 
 class UserPreferencesService:
