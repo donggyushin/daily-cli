@@ -40,15 +40,14 @@ class AnthropicClient(AIClientInterface):
                 # UTF-8 인코딩 문제 방지: 서로게이트 문자 제거
                 content = msg["content"]
                 if isinstance(content, str):
-                    content = content.encode('utf-8', errors='ignore').decode('utf-8')
+                    content = content.encode("utf-8", errors="ignore").decode("utf-8")
 
                 if msg["role"] == "system":
                     system_message = content
                 else:
-                    conversation_messages.append({
-                        "role": msg["role"],
-                        "content": content
-                    })
+                    conversation_messages.append(
+                        {"role": msg["role"], "content": content}
+                    )
 
             # API 호출
             response = self.client.messages.create(
@@ -56,7 +55,7 @@ class AnthropicClient(AIClientInterface):
                 max_tokens=1000,
                 temperature=0.7,
                 system=system_message if system_message else "",
-                messages=conversation_messages
+                messages=conversation_messages,
             )
 
             return response.content[0].text
