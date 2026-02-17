@@ -21,13 +21,18 @@ class PreferencesUI:
         """
         self.preferences_service = preferences_service
         self.console = console
+        self._on_back_callback = None  # 뒤로 가기 콜백 저장
 
     def show_preferences_menu(self, on_back_callback=None):
         """사용자 설정 관리 메뉴 표시
 
         Args:
-            on_back_callback: 뒤로 가기 시 호출할 콜백 함수
+            on_back_callback: 뒤로 가기 시 호출할 콜백 함수 (None이면 기존 저장된 콜백 사용)
         """
+        # 새로운 콜백이 전달되면 저장
+        if on_back_callback is not None:
+            self._on_back_callback = on_back_callback
+
         self.console.print()
         self.console.print(
             Panel.fit(
@@ -72,8 +77,8 @@ class PreferencesUI:
         elif choice == "2":
             self.reset_preferences()
         elif choice == "3":
-            if on_back_callback:
-                on_back_callback()
+            if self._on_back_callback:
+                self._on_back_callback()
 
     def change_writing_style(self):
         """일기 작성 스타일 변경"""

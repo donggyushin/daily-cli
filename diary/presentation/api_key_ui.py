@@ -23,6 +23,7 @@ class ApiKeyUI:
         """
         self.credential_service = credential_service
         self.console = console
+        self._on_back_callback = None  # 뒤로 가기 콜백 저장
 
     def setup_api_key(self) -> bool:
         """API 키 등록 플로우
@@ -79,8 +80,12 @@ class ApiKeyUI:
         """API 키 관리 메뉴 표시
 
         Args:
-            on_back_callback: 뒤로 가기 시 호출할 콜백 함수
+            on_back_callback: 뒤로 가기 시 호출할 콜백 함수 (None이면 기존 저장된 콜백 사용)
         """
+        # 새로운 콜백이 전달되면 저장
+        if on_back_callback is not None:
+            self._on_back_callback = on_back_callback
+
         self.console.print()
         self.console.print(
             Panel.fit(
@@ -127,18 +132,18 @@ class ApiKeyUI:
         if choice == "1":
             self.setup_api_key()
             # 다시 관리 메뉴로
-            self.show_management_menu(on_back_callback)
+            self.show_management_menu()
         elif choice == "2":
             self.change_default_ai()
             # 다시 관리 메뉴로
-            self.show_management_menu(on_back_callback)
+            self.show_management_menu()
         elif choice == "3":
             self.delete_api_key()
             # 다시 관리 메뉴로
-            self.show_management_menu(on_back_callback)
+            self.show_management_menu()
         elif choice == "4":
-            if on_back_callback:
-                on_back_callback()
+            if self._on_back_callback:
+                self._on_back_callback()
 
     def change_default_ai(self):
         """기본 AI 변경"""
