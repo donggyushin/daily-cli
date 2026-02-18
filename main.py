@@ -15,6 +15,7 @@ from diary.data.repositories import (
     AnthropicClient,
     GoogleAIClient,
 )
+from diary.data.repositories.mongodb_chat_repository import MongoDBChatRepository
 from diary.domain.services import CredentialService, UserPreferencesService, ChatService
 from diary.domain.entities import AIProvider
 from diary.presentation.cli import DiaryApp
@@ -57,7 +58,8 @@ def main(ctx: typer.Context):
 
             # ai_client가 성공적으로 생성된 경우에만 Chat Service 생성
             if ai_client:
-                chat_repo = FileSystemChatRepository()
+                chat_repo = MongoDBChatRepository()
+                # chat_repo = FileSystemChatRepository()
                 chat_service = ChatService(
                     chat_repo=chat_repo,
                     ai_client=ai_client,

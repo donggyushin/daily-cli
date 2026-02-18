@@ -60,11 +60,12 @@ def migrate_chat_data():
 
     # 활성 세션 마이그레이션
     print("\n활성 세션 마이그레이션 중...")
-    active_session_id = file_repo.get_active_session_id()
-    if active_session_id:
+    active_session = file_repo.get_active_session()
+    if active_session:
         try:
-            mongo_repo.set_active_session_id(active_session_id)
-            print(f"✓ 활성 세션 설정 완료: {active_session_id[:16]}...")
+            # 활성 세션 저장 (save_session이 자동으로 활성 세션으로 설정)
+            mongo_repo.save_session(active_session)
+            print(f"✓ 활성 세션 설정 완료: {active_session.session_id[:16]}...")
         except Exception as e:
             print(f"✗ 활성 세션 설정 실패: {e}")
 

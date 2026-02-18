@@ -90,6 +90,20 @@ class MongoDBChatRepository(ChatRepositoryInterface):
             upsert=True,
         )
 
+        # 활성 세션 관리
+        if session.is_active:
+            # 활성 세션으로 설정
+            self.active_session.update_one(
+                {"type": "active"},
+                {"$set": {"session_id": session.session_id, "updated_at": datetime.now().isoformat()}},
+                upsert=True,
+            )
+        else:
+            # 비활성화된 세션이 현재 활성 세션이면 제거
+            active_doc = self.active_session.find_one({"type": "active"})
+            if active_doc and active_doc.get("session_id") == session.session_id:
+                self.active_session.delete_one({"type": "active"})
+
     def get_session(self, session_id: str) -> Optional[ChatSession]:
         """세션 ID로 채팅 세션 조회"""
         doc = self.sessions.find_one({"session_id": session_id})
@@ -98,25 +112,18 @@ class MongoDBChatRepository(ChatRepositoryInterface):
 
         return self._doc_to_session(doc)
 
-    def get_active_session_id(self) -> Optional[str]:
-        """현재 활성 세션 ID 조회"""
+    def get_active_session(self) -> Optional[ChatSession]:
+        """현재 활성화된 세션 반환 (인터페이스 구현)"""
         doc = self.active_session.find_one({"type": "active"})
         if not doc:
             return None
-        return doc.get("session_id")
 
-    def set_active_session_id(self, session_id: Optional[str]) -> None:
-        """활성 세션 ID 설정"""
-        if session_id is None:
-            # 활성 세션 삭제
-            self.active_session.delete_one({"type": "active"})
-        else:
-            # 활성 세션 업데이트
-            self.active_session.update_one(
-                {"type": "active"},
-                {"$set": {"session_id": session_id, "updated_at": datetime.now().isoformat()}},
-                upsert=True,
-            )
+        session_id = doc.get("session_id")
+        if not session_id:
+            return None
+
+        # 활성 세션 ID로 실제 세션 조회
+        return self.get_session(session_id)
 
     def list_sessions(self, limit: int = 10) -> List[ChatSession]:
         """채팅 세션 목록 조회 (최신순)"""
@@ -155,6 +162,6 @@ class MongoDBChatRepository(ChatRepositoryInterface):
         """Context manager 지원"""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, _exc_type, _exc_val, _exc_tb):
         """Context manager 종료 시 연결 닫기"""
         self.close()
