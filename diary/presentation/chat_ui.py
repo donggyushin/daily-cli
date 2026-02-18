@@ -139,6 +139,8 @@ class ChatUI:
         if choice == "y":
             if self.on_back_callback:
                 self._end_chat_session(self.on_back_callback, diary_content)
+        else:
+            self.console.print("[dim]계속 대화하거나 'quit'로 종료하세요.[/dim]")
 
     def _display_recent_messages(self, session, count: int = 3):
         """최근 메시지 몇 개 표시"""
