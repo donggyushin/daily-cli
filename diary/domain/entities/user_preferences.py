@@ -18,7 +18,8 @@ class UserPreferences:
         created_at: 설정 생성 일시
         updated_at: 설정 수정 일시
     """
-    writing_style: WritingStyle = WritingStyle.FIRST_PERSON_AUTOBIOGRAPHY  # 기본값: 1인칭 자서전
+
+    writing_style: WritingStyle = WritingStyle.EMOTIONAL_LITERARY  # 기본값: 갬성모드
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -38,8 +39,6 @@ class UserPreferences:
         Raises:
             ValueError: 유효하지 않은 스타일인 경우
         """
-        if not isinstance(new_style, WritingStyle):
-            raise ValueError("유효한 WritingStyle을 선택해야 합니다")
 
         self.writing_style = new_style
         self.updated_at = datetime.now()
@@ -64,9 +63,15 @@ class UserPreferences:
     def from_dict(cls, data: dict) -> "UserPreferences":
         """딕셔너리에서 복원 (조회 시 사용)"""
         return cls(
-            writing_style=WritingStyle(data.get("writing_style", WritingStyle.FIRST_PERSON_AUTOBIOGRAPHY.value)),
-            created_at=datetime.fromisoformat(data["created_at"]) if data.get("created_at") else None,
-            updated_at=datetime.fromisoformat(data["updated_at"]) if data.get("updated_at") else None,
+            writing_style=WritingStyle(
+                data.get("writing_style", WritingStyle.FIRST_PERSON_AUTOBIOGRAPHY.value)
+            ),
+            created_at=datetime.fromisoformat(data["created_at"])
+            if data.get("created_at")
+            else None,
+            updated_at=datetime.fromisoformat(data["updated_at"])
+            if data.get("updated_at")
+            else None,
         )
 
     @classmethod

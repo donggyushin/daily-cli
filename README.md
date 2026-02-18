@@ -1,50 +1,17 @@
 # Daily CLI
 
-AI와 대화하며 작성하는 일기 앱
+AI와 대화하며 작성하는 일기 터미널 앱
 
 ## 주요 기능
 
 - ✅ **AI API 키 관리**: OpenAI, Anthropic, Google AI 지원
-- ✅ **생성자 주입 방식**: 명시적 의존성 주입 (Constructor Injection)
-- ✅ **레이어드 아키텍처**: Domain, Data, Presentation 분리
 - ✅ **AI 대화형 채팅**: AI와 자연스럽게 대화하며 하루 기록
 
-## 빠른 시작
+##  시작
 
-### 1. 로컬 실행 (권장)
+이 어플리케이션을 시작하는 가장 좋은 방법은 Docker 를 이용하여 실행하는 겁니다. 로컬 머신에 우선 Docker Desktop 을 설치해주세요.
 
-```bash
-# 의존성 설치
-uv sync
-
-# 실행
-python main.py
-```
-
-최초 실행 시 API 키 등록이 필요합니다:
-1. 사용할 AI 서비스 선택 (OpenAI/Anthropic/Google)
-2. API 키 입력
-3. 메인 메뉴 진입
-
-### 2. Docker 사용
-
-```bash
-# 빌드
-make build
-
-# 실행
-make run
-
-# 개발 모드
-make dev
-```
-
-### 3. MongoDB 사용 (선택사항)
-
-파일 시스템 대신 MongoDB를 데이터 저장소로 사용할 수 있습니다.
-
-#### 🔐 중요: 초기 설정 (보안)
-
+### Setup MongoDB
 ```bash
 # 1. 환경 변수 파일 생성
 make setup-env
@@ -56,65 +23,27 @@ vi .env
 
 # 3. 보안 검증
 make check-env
-```
 
-**⚠️ 절대 기본 비밀번호(`CHANGE_THIS_PASSWORD`)를 그대로 사용하지 마세요!**
-
-상세한 보안 가이드: [docs/SECURITY.md](docs/SECURITY.md)
-
-#### MongoDB 사용
-
-```bash
-# MongoDB + Mongo Express 시작 (자동으로 보안 검증)
+# 4. MongoDB + Mongo Express 시작 (자동으로 보안 검증)
 make up-db
 
 # Mongo Express 접속
 # http://localhost:8081
 # Username/Password: .env 파일에 설정한 값
 
-# MongoDB 쉘 접속
-make mongo-shell
-
-# MongoDB 서비스 중지
-make down-db
 
 # 환경 변수 변경 후 재시작
 make restart-db
 ```
 
-**환경 변수 변경 후 적용 방법**: [docs/MONGODB_UPDATE_GUIDE.md](docs/MONGODB_UPDATE_GUIDE.md)
+### Start Application 
 
-**애플리케이션에서 MongoDB 사용**:
-```python
-from diary.data.repositories import (
-    MongoDBChatRepository,
-    MongoDBDiaryRepository
-)
-from diary.domain.services import ChatService, DiaryService
-
-# MongoDB Repository 사용
-chat_repo = MongoDBChatRepository()      # 채팅
-diary_repo = MongoDBDiaryRepository()    # 일기 (Cursor 기반 페이지네이션)
-
-# Service 생성
-chat_service = ChatService(chat_repo, ai_client, preferences_service)
-diary_service = DiaryService(diary_repo)
-
-# 일기 작성
-from datetime import date
-diary = diary_service.create_diary(
-    diary_date=date.today(),
-    content="오늘의 일기"
-)
-
-# Cursor 기반 페이지네이션
-diaries, next_cursor = diary_service.list_diaries(limit=10)
-```
-
-**테스트**:
 ```bash
-# MongoDB Diary Repository 테스트
-make test-diary
+# 빌드
+make build
+
+# 실행
+make run
 ```
 
 ## 사용 예제
@@ -122,14 +51,12 @@ make test-diary
 ### 메인 기능
 
 ```bash
-# CLI 실행
-uv run python main.py
-
 # 메뉴에서 선택
 1. Write Diary          # AI와 대화하며 하루 기록 ⭐
 2. Manage API Keys      # API 키 관리
-3. Manage Preferences   # 사용자 설정 (일기 스타일 선택)
-4. Exit
+3. Manage Preferences   # 사용자 설정 (일기 스타일 선택, 3번 옵션 강력하게 추천)
+4. Diaries              # 일기 목록
+5. Exit
 ```
 
 ### AI 채팅 기능
