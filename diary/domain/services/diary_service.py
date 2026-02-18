@@ -112,6 +112,18 @@ class DiaryService:
         """
         return self.diary_repo.get_by_date(diary_date)
 
+    def get_diary_by_id(self, diary_id: str) -> Optional[Diary]:
+        """
+        ID로 일기 조회
+
+        Args:
+            diary_id: 조회할 일기 ID
+
+        Returns:
+            일기 또는 None
+        """
+        return self.diary_repo.get_by_id(diary_id)
+
     def get_today_diary(self) -> Optional[Diary]:
         """오늘의 일기 조회"""
         return self.diary_repo.get_by_date(date.today())
