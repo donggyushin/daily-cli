@@ -9,7 +9,13 @@ AI와 대화하며 작성하는 일기 터미널 앱
 
 ##  시작
 
-이 어플리케이션을 시작하는 가장 좋은 방법은 Docker 를 이용하여 실행하는 겁니다. 로컬 머신에 우선 Docker Desktop 을 설치해주세요.
+이 어플리케이션을 시작하는 가장 좋은 방법은 Docker 를 이용하여 실행하는 겁니다. 로컬 머신에 우선 Docker Desktop 을 설치해주세요. <br /><br /> 
+만약 당신이 정 로컬에서 사용하시고 싶으시다면, python3.12 이상, MongoDB, MongoExpress, uv 등 필요한 소프트웨어들을 미리 준비해주시고, .env 파일에 데이터베이스 인증 정보를 기입후 
+```bash 
+uv sync
+uv run main.py 
+```
+를 통해 소프트웨어를 실행시켜주십시오. 좋은 생각은 아닐겁니다.
 
 ### Setup MongoDB
 ```bash
