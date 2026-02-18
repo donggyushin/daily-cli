@@ -446,11 +446,82 @@ Enhanced AI Prompt with Few-shot examples
 이러한 스타일을 참고하여 깊이 있고 감성적인 일기를 작성해주세요.
 ```
 
-### 아키텍처 장점
+#### 아키텍처 장점
 - ✅ **사용자 친화적**: 텍스트 파일만 편집
 - ✅ **레이어 분리**: Domain은 파일 시스템 모름
 - ✅ **선택적 기능**: 예시 파일 없어도 기본 동작
 - ✅ **확장 가능**: 다른 스타일에도 동일하게 적용
+
+---
+
+### 2. Cursor 기반 페이지네이션 ⭐ NEW
+
+**목적**: 효율적인 일기 목록 조회 (대량 데이터 처리)
+
+#### 왜 Cursor 기반인가?
+
+**전통적 Offset 기반의 문제점**:
+```python
+# Offset 방식 (비효율적)
+page1 = get_diaries(offset=0, limit=10)   # 1-10번 일기
+page2 = get_diaries(offset=10, limit=10)  # 11-20번 일기
+page3 = get_diaries(offset=20, limit=10)  # 21-30번 일기
+
+# 문제:
+# - offset=1000이면 1000개를 건너뛰어야 함 (느림)
+# - 새 데이터 추가 시 중복/누락 가능
+```
+
+**Cursor 방식의 장점**:
+```python
+# Cursor 방식 (효율적)
+diaries, cursor = get_diaries(limit=10)              # 최근 10개
+more, cursor = get_diaries(cursor=cursor, limit=10)  # 다음 10개
+
+# 장점:
+# - 항상 O(1) 시작 (마지막 위치에서 시작)
+# - 데이터 추가되어도 중복/누락 없음
+# - 무한 스크롤에 최적화
+```
+
+#### 구현 예시
+
+```python
+# domain/interfaces/diary_repository.py
+class DiaryRepositoryInterface(ABC):
+    @abstractmethod
+    def list_diaries(
+        self,
+        cursor: Optional[str] = None,
+        limit: int = 30,
+    ) -> Tuple[List[Diary], Optional[str]]:
+        """
+        Returns:
+            (일기 리스트, 다음 커서)
+            - 일기 리스트: 최신순 정렬
+            - 다음 커서: None이면 마지막 페이지
+        """
+        pass
+
+# 사용 예시
+# 첫 페이지
+diaries, next_cursor = diary_service.list_diaries(limit=10)
+for diary in diaries:
+    print(diary.get_formatted_date(), diary.content[:50])
+
+# 다음 페이지
+if next_cursor:
+    more_diaries, next_cursor = diary_service.list_diaries(
+        cursor=next_cursor,
+        limit=10
+    )
+```
+
+#### 장점
+- ✅ **성능**: 대량 데이터에서도 일정한 속도
+- ✅ **안정성**: 새 데이터 추가 시에도 중복/누락 없음
+- ✅ **확장성**: MongoDB, PostgreSQL 모두 지원 가능
+- ✅ **무한 스크롤**: 모바일/웹 UI에 최적화
 
 ---
 
