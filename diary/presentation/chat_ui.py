@@ -1,6 +1,7 @@
 """채팅 UI 컴포넌트"""
 
 from datetime import datetime
+from typing import Optional
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
@@ -137,11 +138,7 @@ class ChatUI:
 
         if choice == "y":
             if self.on_back_callback:
-                self._end_chat_session(self.on_back_callback)
-            diary = self.diary_service.create_diary(datetime.now(), diary_content)
-            # 일기 상세 페이지 보여주기. 인자로 id 전달 필요
-            self.diary_ui._show_diary_detail(diary, self.on_back_callback)
-            return
+                self._end_chat_session(self.on_back_callback, diary_content)
 
     def _display_recent_messages(self, session, count: int = 3):
         """최근 메시지 몇 개 표시"""
@@ -157,13 +154,14 @@ class ChatUI:
             elif msg.role.value == "assistant":
                 self._display_ai_message(msg.content)
 
-    def _end_chat_session(self, on_back_callback):
+    def _end_chat_session(self, on_back_callback, diary_content: Optional[str] = None):
         """채팅 세션 종료"""
         self.console.print("\n[yellow]대화를 종료합니다.[/yellow]")
 
         # 세션 종료
         success = self.chat_service.end_current_session()
-        if success:
+        if success and diary_content:
+            self.diary_service.create_diary(datetime.now(), diary_content)
             self.console.print("[green]대화 내용이 저장되었습니다.[/green]")
         else:
             self.console.print("[yellow]저장할 대화가 없습니다.[/yellow]")
