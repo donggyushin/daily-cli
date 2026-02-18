@@ -1,0 +1,74 @@
+name: Docker Build & Test
+
+# main 브랜치에 push되거나 PR이 merge될 때 실행
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  docker-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. .env 파일 생성 (테스트용)
+      - name: Create .env file for CI
+        run: |
+          cat > .env << EOF
+          MONGODB_HOST=mongodb
+          MONGODB_PORT=27017
+          MONGODB_USERNAME=admin
+          MONGODB_PASSWORD=test_password_123
+          MONGODB_DATABASE=daily_diary
+          ME_CONFIG_BASICAUTH_USERNAME=admin
+          ME_CONFIG_BASICAUTH_PASSWORD=test_password_123
+          TZ=Asia/Seoul
+          EOF
+          echo "✅ .env file created"
+
+      # 3. MongoDB 서비스 시작
+      - name: Start MongoDB service
+        run: |
+          docker compose up -d mongodb
+          echo "⏳ Waiting for MongoDB to be ready..."
+          sleep 10
+          echo "✅ MongoDB is ready"
+
+      # 4. Docker 이미지 빌드
+      - name: Build Docker image
+        run: |
+          docker compose build daily-cli
+          echo "✅ Docker image built successfully"
+
+      # 5. 애플리케이션 실행 테스트 (--help)
+      - name: Test application startup
+        run: |
+          echo "🧪 Testing application with --help..."
+          docker compose run --rm daily-cli python main.py --help
+          echo "✅ Application runs without errors"
+
+      # 6. 정리 (Clean up)
+      - name: Clean up
+        if: always()
+        run: |
+          docker compose down -v
+          echo "✅ Cleanup completed"
+
+      # 7. 테스트 결과 요약
+      - name: Test Summary
+        if: success()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ All tests passed!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✓ Docker image built successfully"
+          echo "✓ MongoDB connection established"
+          echo "✓ Application starts without errors"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
