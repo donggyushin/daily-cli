@@ -136,10 +136,9 @@ class ChatUI:
         )
 
         if choice == "y":
-            with self.console.status("", spinner="earth"):
-                diary = self.diary_service.create_diary(datetime.now(), content)
-                # 일기 상세 페이지 보여주기. 인자로 id 전달 필요
-                self.diary_ui._show_diary_detail(diary, self.on_back_callback)
+            diary = self.diary_service.create_diary(datetime.now(), diary_content)
+            # 일기 상세 페이지 보여주기. 인자로 id 전달 필요
+            self.diary_ui._show_diary_detail(diary, self.on_back_callback)
 
     def _display_recent_messages(self, session, count: int = 3):
         """최근 메시지 몇 개 표시"""
