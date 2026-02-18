@@ -7,6 +7,7 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 
 from diary.domain.services import CredentialService, UserPreferencesService, ChatService
+from diary.domain.services.diary_service import DiaryService
 from diary.presentation.preferences_ui import PreferencesUI
 from diary.presentation.api_key_ui import ApiKeyUI
 from diary.presentation.chat_ui import ChatUI
@@ -22,6 +23,7 @@ class DiaryApp:
         self,
         credential_service: CredentialService,
         preferences_service: UserPreferencesService,
+        diary_service: DiaryService,
         chat_service: Optional[ChatService] = None,
     ):
         """
@@ -34,6 +36,7 @@ class DiaryApp:
         self.preferences_service = preferences_service
         self.chat_service = chat_service
         self.console = Console()
+        self.diary_service = diary_service
 
         # UI 컴포넌트 초기화
         self.preferences_ui = PreferencesUI(preferences_service, self.console)
@@ -41,7 +44,7 @@ class DiaryApp:
 
         # ChatUI는 chat_service가 있을 때만 초기화
         if chat_service:
-            self.chat_ui = ChatUI(chat_service, self.console)
+            self.chat_ui = ChatUI(chat_service, self.console, self.diary_service)
         else:
             self.chat_ui = None
 
