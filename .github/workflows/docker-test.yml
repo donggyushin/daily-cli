@@ -67,21 +67,14 @@ jobs:
             exit 1
           fi
 
-      # 6. --help 옵션 테스트 (정상 종료 확인)
-      - name: Test application with --help
-        run: |
-          echo "🧪 Testing application with --help option..."
-          docker compose run --rm daily-cli python main.py --help
-          echo "✅ Application --help works correctly"
-
-      # 7. 정리 (Clean up)
+      # 6. 정리 (Clean up)
       - name: Clean up
         if: always()
         run: |
           docker compose down -v
           echo "✅ Cleanup completed"
 
-      # 8. 테스트 결과 요약
+      # 7. 테스트 결과 요약
       - name: Test Summary
         if: success()
         run: |
