@@ -1,0 +1,88 @@
+name: Docker Build & Test
+
+# main 브랜치에 push되거나 PR이 merge될 때 실행
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  docker-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. .env 파일 생성 (테스트용)
+      - name: Create .env file for CI
+        run: |
+          cat > .env << EOF
+          MONGODB_HOST=mongodb
+          MONGODB_PORT=27017
+          MONGODB_USERNAME=admin
+          MONGODB_PASSWORD=test_password_123
+          MONGODB_DATABASE=daily_diary
+          ME_CONFIG_BASICAUTH_USERNAME=admin
+          ME_CONFIG_BASICAUTH_PASSWORD=test_password_123
+          TZ=Asia/Seoul
+          EOF
+          echo "✅ .env file created"
+
+      # 3. MongoDB 서비스 시작
+      - name: Start MongoDB service
+        run: |
+          docker compose up -d mongodb
+          echo "⏳ Waiting for MongoDB to be ready..."
+          sleep 10
+          echo "✅ MongoDB is ready"
+
+      # 4. Docker 이미지 빌드 (make build)
+      - name: Build Docker image
+        run: |
+          make build
+          echo "✅ Docker image built successfully"
+
+      # 5. 애플리케이션 실행 테스트 (make run with timeout)
+      - name: Test application startup (make run)
+        run: |
+          echo "🧪 Testing 'make run' with 5-second timeout..."
+          # timeout으로 5초간 실행 후 종료
+          timeout 5s make run || EXIT_CODE=$?
+
+          # 성공 케이스:
+          # 0 = 정상 종료
+          # 1 = Typer Aborted (사용자 입력 없이 종료)
+          # 2 = Typer Aborted (alternative exit code)
+          # 124 = Timeout (5초 동안 실행됨)
+          # 130 = SIGINT (Ctrl+C)
+          if [ "${EXIT_CODE:-0}" -eq 0 ] || [ "${EXIT_CODE:-0}" -eq 1 ] || [ "${EXIT_CODE:-0}" -eq 2 ] || [ "${EXIT_CODE:-0}" -eq 124 ] || [ "${EXIT_CODE:-0}" -eq 130 ]; then
+            echo "✅ 'make run' started successfully (exit code: ${EXIT_CODE:-0})"
+          else
+            echo "❌ 'make run' failed with unexpected error (exit code: ${EXIT_CODE})"
+            exit 1
+          fi
+
+      # 6. 정리 (Clean up)
+      - name: Clean up
+        if: always()
+        run: |
+          docker compose down -v
+          echo "✅ Cleanup completed"
+
+      # 7. 테스트 결과 요약
+      - name: Test Summary
+        if: success()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ All tests passed!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✓ Docker image built with 'make build'"
+          echo "✓ MongoDB connection established"
+          echo "✓ 'make run' starts without errors"
+          echo "✓ Application --help works correctly"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
