@@ -51,7 +51,7 @@ jobs:
       - name: Test application startup
         run: |
           echo "🧪 Testing application with --help..."
-          docker compose run --rm daily-cli python main.py --help
+          docker compose run --rm daily-cli uv run main.py --help
           echo "✅ Application runs without errors"
 
       # 6. 정리 (Clean up)
