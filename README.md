@@ -4,12 +4,23 @@ AI와 대화하며 작성하는 일기 터미널 앱
 
 ## 주요 기능
 
-- ✅ **AI API 키 관리**: OpenAI, Anthropic, Google AI 지원
-- ✅ **AI 대화형 채팅**: AI와 자연스럽게 대화하며 하루 기록
+- **AI API 키 관리**: OpenAI, Anthropic, Google AI 지원
+- **AI 대화형 채팅**: AI와 자연스럽게 대화하며 하루 기록
+- **AI 일기 작성 도우미**: 나눈 대화 기반으로 정갈한 일기 작성
+
+<p align="center">
+  <img src="resources/daily_diaries.png" alt="Daily Diaries Screenshot" width="800">
+</p>
 
 ##  시작
 
-이 어플리케이션을 시작하는 가장 좋은 방법은 Docker 를 이용하여 실행하는 겁니다. 로컬 머신에 우선 Docker Desktop 을 설치해주세요.
+이 어플리케이션을 시작하는 가장 좋은 방법은 Docker 를 이용하여 실행하는 겁니다. 로컬 머신에 우선 Docker Desktop 을 설치해주세요. <br /><br /> 
+만약 당신이 정 로컬에서 사용하시고 싶으시다면, python3.12 이상, MongoDB, MongoExpress, uv 등 필요한 소프트웨어들을 미리 준비해주시고, .env 파일에 데이터베이스 인증 정보를 기입후 
+```bash 
+uv sync
+uv run main.py 
+```
+를 통해 소프트웨어를 실행시켜주십시오. 좋은 생각은 아닐겁니다.
 
 ### Setup MongoDB
 ```bash
@@ -32,7 +43,7 @@ make up-db
 # Username/Password: .env 파일에 설정한 값
 
 
-# 환경 변수 변경 후 재시작
+# 환경 변수를 변경했다면, 변경 후 재시작
 make restart-db
 ```
 
@@ -71,31 +82,10 @@ You: 새로운 기능 개발이었는데, 버그가 좀 많이 나와서...
 
 # 대화가 충분히 쌓이면 AI가 일기 작성 제안
 AI: 오늘 대화를 바탕으로 일기를 작성해드릴까요?
+You: 응 작성해줘.
 
 # 종료: 'quit', 'exit', '그만'
-# → 대화 내용이 data/chats/ 폴더에 저장됨
-```
-
-### 프로그래밍 방식 사용
-
-```python
-from diary.data.repositories import FileSystemCredentialRepository
-from diary.domain.services import CredentialService
-from diary.domain.entities import AIProvider
-
-# 의존성 조립 (Dependency Injection)
-repo = FileSystemCredentialRepository()
-service = CredentialService(repo)
-
-# API 키 저장
-service.save_credential(
-    provider=AIProvider.OPENAI,
-    api_key="sk-proj-xxx"
-)
-
-# 기본 AI 조회
-default = service.get_default_credential()
-print(f"사용 중인 AI: {default.provider.value}")
+# → 대화 내용이 Container 내부의 MongoDB에 저장됨
 ```
 
 ## 아키텍처
@@ -103,7 +93,7 @@ print(f"사용 중인 AI: {default.provider.value}")
 레이어드 아키텍처 + 의존성 역전 원칙 (DIP)
 
 - **Presentation Layer**: CLI 인터페이스 (Typer + Rich)
-- **Domain Layer**: 비즈니스 로직 (순수, 의존성 없음)
+- **Domain Layer**: 순수 비즈니스 로직에 대한 정의 (순수, 의존성 없음)
 - **Data Layer**: 데이터 저장 및 외부 API
 
 자세한 내용은 [CLAUDE.md](./CLAUDE.md) 참조
