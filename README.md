@@ -71,31 +71,10 @@ You: 새로운 기능 개발이었는데, 버그가 좀 많이 나와서...
 
 # 대화가 충분히 쌓이면 AI가 일기 작성 제안
 AI: 오늘 대화를 바탕으로 일기를 작성해드릴까요?
+You: 응 작성해줘.
 
 # 종료: 'quit', 'exit', '그만'
-# → 대화 내용이 data/chats/ 폴더에 저장됨
-```
-
-### 프로그래밍 방식 사용
-
-```python
-from diary.data.repositories import FileSystemCredentialRepository
-from diary.domain.services import CredentialService
-from diary.domain.entities import AIProvider
-
-# 의존성 조립 (Dependency Injection)
-repo = FileSystemCredentialRepository()
-service = CredentialService(repo)
-
-# API 키 저장
-service.save_credential(
-    provider=AIProvider.OPENAI,
-    api_key="sk-proj-xxx"
-)
-
-# 기본 AI 조회
-default = service.get_default_credential()
-print(f"사용 중인 AI: {default.provider.value}")
+# → 대화 내용이 Container 내부의 MongoDB에 저장됨
 ```
 
 ## 아키텍처
@@ -103,7 +82,7 @@ print(f"사용 중인 AI: {default.provider.value}")
 레이어드 아키텍처 + 의존성 역전 원칙 (DIP)
 
 - **Presentation Layer**: CLI 인터페이스 (Typer + Rich)
-- **Domain Layer**: 비즈니스 로직 (순수, 의존성 없음)
+- **Domain Layer**: 순수 비즈니스 로직에 대한 정의 (순수, 의존성 없음)
 - **Data Layer**: 데이터 저장 및 외부 API
 
 자세한 내용은 [CLAUDE.md](./CLAUDE.md) 참조
