@@ -1,12 +1,11 @@
 """일기 관리 UI 컴포넌트"""
 
-from typing import Optional, List, Tuple
-from datetime import date, timedelta
+from typing import Optional, List
+from datetime import date
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.prompt import Prompt
-from rich.markdown import Markdown
 
 from diary.domain.services import DiaryService
 from diary.domain.entities import Diary
@@ -130,7 +129,9 @@ class DiaryUI:
 
         for i, diary in enumerate(self._current_diaries, 1):
             # 내용 미리보기 (50자)
-            preview = diary.content[:50] + "..." if len(diary.content) > 50 else diary.content
+            preview = (
+                diary.content[:50] + "..." if len(diary.content) > 50 else diary.content
+            )
 
             table.add_row(
                 str(i),
@@ -209,7 +210,9 @@ class DiaryUI:
 
         try:
             if diary.diary_id:
-                updated_diary = self.diary_service.update_diary(diary.diary_id, new_content)
+                updated_diary = self.diary_service.update_diary(
+                    diary.diary_id, new_content
+                )
                 self.console.print(
                     f"\n[green]✓ 일기가 수정되었습니다.[/green]\n"
                     f"[dim]수정 시각: {updated_diary.updated_at.strftime('%Y-%m-%d %H:%M')}[/dim]"
@@ -292,7 +295,9 @@ class DiaryUI:
 
         # 날짜 범위 유효성 검사
         if start_date and end_date and start_date > end_date:
-            self.console.print("[red]시작 날짜는 종료 날짜보다 이전이어야 합니다.[/red]")
+            self.console.print(
+                "[red]시작 날짜는 종료 날짜보다 이전이어야 합니다.[/red]"
+            )
             input("\nEnter를 눌러 계속...")
             return
 
