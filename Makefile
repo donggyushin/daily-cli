@@ -21,6 +21,19 @@ clean: ## Docker 이미지 삭제
 
 rebuild: clean build ## 완전 재빌드
 
+# MongoDB 관련
+up-db: ## MongoDB 서비스만 시작
+	docker compose up -d mongodb mongo-express
+
+down-db: ## MongoDB 서비스 중지
+	docker compose down mongodb mongo-express
+
+logs-db: ## MongoDB 로그 확인
+	docker compose logs -f mongodb
+
+mongo-shell: ## MongoDB 쉘 접속
+	docker compose exec mongodb mongosh -u admin -p admin123
+
 # 로컬 실행 (비교용)
 local: ## 로컬에서 uv run 실행
 	uv run main.py

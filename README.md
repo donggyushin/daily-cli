@@ -39,6 +39,52 @@ make run
 make dev
 ```
 
+### 3. MongoDB 사용 (선택사항)
+
+파일 시스템 대신 MongoDB를 데이터 저장소로 사용할 수 있습니다.
+
+```bash
+# MongoDB + Mongo Express 시작
+make up-db
+
+# Mongo Express 접속
+# http://localhost:8081
+# Username: admin / Password: admin123
+
+# MongoDB 쉘 접속
+make mongo-shell
+
+# MongoDB 서비스 중지
+make down-db
+```
+
+**환경 변수 설정**:
+```bash
+# .env 파일 생성
+cp .env.example .env
+
+# 필요시 MongoDB 연결 정보 수정
+vi .env
+```
+
+**애플리케이션에서 MongoDB 사용**:
+```python
+from diary.data.repositories import MongoDBChatRepository
+from diary.domain.services import ChatService
+
+# MongoDB Repository 사용
+chat_repo = MongoDBChatRepository(
+    host="mongodb",
+    port=27017,
+    username="admin",
+    password="admin123",
+    database="daily_diary"
+)
+
+# 또는 환경 변수로 자동 설정
+chat_repo = MongoDBChatRepository()  # .env 파일 읽음
+```
+
 ## 사용 예제
 
 ### 메인 기능

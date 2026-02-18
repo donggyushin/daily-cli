@@ -7,12 +7,14 @@ from diary.data.repositories.file_chat_repository import FileSystemChatRepositor
 from diary.data.repositories.openai_client import OpenAIClient
 from diary.data.repositories.anthropic_client import AnthropicClient
 from diary.data.repositories.google_ai_client import GoogleAIClient
+from diary.data.repositories.mongodb_chat_repository import MongoDBChatRepository
 
 __all__ = [
     "FileSystemCredentialRepository",
     "FileSystemUserPreferencesRepository",
     "FileSystemWritingStyleExamplesRepository",
     "FileSystemChatRepository",
+    "MongoDBChatRepository",
     "OpenAIClient",
     "AnthropicClient",
     "GoogleAIClient",
