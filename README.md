@@ -4,8 +4,13 @@ AI와 대화하며 작성하는 일기 터미널 앱
 
 ## 주요 기능
 
-- ✅ **AI API 키 관리**: OpenAI, Anthropic, Google AI 지원
-- ✅ **AI 대화형 채팅**: AI와 자연스럽게 대화하며 하루 기록
+- **AI API 키 관리**: OpenAI, Anthropic, Google AI 지원
+- **AI 대화형 채팅**: AI와 자연스럽게 대화하며 하루 기록
+- **AI 일기 작성 도우미**: 나눈 대화 기반으로 정갈한 일기 작성
+
+<p align="center">
+  <img src="resources/daily_diaries.png" alt="Daily Diaries Screenshot" width="800">
+</p>
 
 ##  시작
 
