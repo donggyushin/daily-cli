@@ -81,10 +81,21 @@ class MongoDBDiaryRepository(DiaryRepositoryInterface):
         # 수정 시각 갱신
         diary.updated_at = datetime.now()
 
+        # diary_date가 datetime 타입이면 date로 변환 (안전장치)
+        diary_date_value = diary.diary_date
+        if isinstance(diary_date_value, datetime):
+            diary_date_value = diary_date_value.date()
+
+        # created_at, updated_at이 None인 경우 현재 시각으로 설정 (안전장치)
+        if not diary.created_at:
+            diary.created_at = datetime.now()
+        if not diary.updated_at:
+            diary.updated_at = datetime.now()
+
         # MongoDB 문서로 변환
         diary_doc = {
             "diary_id": diary.diary_id,
-            "diary_date": diary.diary_date.isoformat(),
+            "diary_date": diary_date_value.isoformat(),
             "content": diary.content,
             "created_at": diary.created_at.isoformat(),
             "updated_at": diary.updated_at.isoformat(),
@@ -176,7 +187,9 @@ class MongoDBDiaryRepository(DiaryRepositoryInterface):
             last_diary = results[-1]
 
             # 다음 커서 생성 (마지막 항목의 날짜와 생성시각)
-            cursor_value = f"{last_diary.diary_date.isoformat()}|{last_diary.created_at.isoformat()}"
+            # created_at이 None인 경우 현재 시각 사용 (안전장치)
+            created_at_value = last_diary.created_at or datetime.now()
+            cursor_value = f"{last_diary.diary_date.isoformat()}|{created_at_value.isoformat()}"
             next_cursor = base64.b64encode(cursor_value.encode("utf-8")).decode("utf-8")
 
         return results, next_cursor
@@ -193,9 +206,18 @@ class MongoDBDiaryRepository(DiaryRepositoryInterface):
 
     def _doc_to_diary(self, doc: dict) -> Diary:
         """MongoDB 문서를 Diary 엔티티로 변환"""
+        # diary_date 파싱 (datetime 형식도 처리)
+        diary_date_str = doc["diary_date"]
+        if "T" in diary_date_str:
+            # datetime 형식인 경우 (예: 2026-02-18T12:36:28.786555)
+            diary_date_value = datetime.fromisoformat(diary_date_str).date()
+        else:
+            # date 형식인 경우 (예: 2026-02-18)
+            diary_date_value = date.fromisoformat(diary_date_str)
+
         return Diary(
             diary_id=doc["diary_id"],
-            diary_date=date.fromisoformat(doc["diary_date"]),
+            diary_date=diary_date_value,
             content=doc["content"],
             created_at=datetime.fromisoformat(doc["created_at"]),
             updated_at=datetime.fromisoformat(doc["updated_at"]),
