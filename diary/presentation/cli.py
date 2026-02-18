@@ -112,7 +112,6 @@ class DiaryApp:
             self._manage_preferences()
         elif choice == "4":
             self.diary_ui.show_diary_list(self._show_menu, 20)
-
         elif choice == "5":
             self.console.print("[dim]GoodBye![/dim]")
             raise typer.Exit(0)
