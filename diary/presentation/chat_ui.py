@@ -28,12 +28,14 @@ class ChatUI:
             on_back_callback: 뒤로가기 콜백 함수
         """
         self.console.clear()
-        self.console.print(Panel(
-            "[bold cyan]일기 채팅[/bold cyan]\n\n"
-            "AI와 대화하며 오늘 하루를 기록해보세요.\n"
-            "종료: 'quit', 'exit', '그만'",
-            border_style="cyan"
-        ))
+        self.console.print(
+            Panel(
+                "[bold cyan]일기 채팅[/bold cyan]\n\n"
+                "AI와 대화하며 오늘 하루를 기록해보세요.\n"
+                "종료: 'quit', 'exit', '그만'",
+                border_style="cyan",
+            )
+        )
 
         # 새 세션 시작 또는 기존 세션 이어가기
         session = self.chat_service.get_current_session()
@@ -55,7 +57,7 @@ class ChatUI:
             try:
                 user_input = Prompt.ask("\n[bold cyan]You[/bold cyan]")
                 # UTF-8 인코딩 문제 방지: 서로게이트 문자 제거
-                user_input = user_input.encode('utf-8', errors='ignore').decode('utf-8')
+                user_input = user_input.encode("utf-8", errors="ignore").decode("utf-8")
             except (KeyboardInterrupt, EOFError):
                 on_back_callback()
                 return
@@ -73,8 +75,7 @@ class ChatUI:
             try:
                 # 스피너 애니메이션과 함께 AI 응답 대기
                 with self.console.status(
-                    "[cyan]AI가 답변을 작성하고 있습니다[/cyan]",
-                    spinner="simpleDots"
+                    "[cyan]AI가 답변을 작성하고 있습니다[/cyan]", spinner="simpleDots"
                 ):
                     ai_response, is_diary = self.chat_service.send_message(user_input)
 
@@ -91,12 +92,14 @@ class ChatUI:
     def _display_ai_message(self, content: str):
         """AI 메시지 예쁘게 표시"""
         self.console.print()
-        self.console.print(Panel(
-            Markdown(content),
-            title="[bold green]AI Assistant[/bold green]",
-            border_style="green",
-            padding=(1, 2)
-        ))
+        self.console.print(
+            Panel(
+                Markdown(content),
+                title="[bold green]AI Assistant[/bold green]",
+                border_style="green",
+                padding=(1, 2),
+            )
+        )
 
     def _display_diary(self, content: str):
         """일기 생성 시 특별하게 표시"""
@@ -108,18 +111,31 @@ class ChatUI:
             diary_content = content[start_idx:end_idx].strip()
 
         self.console.print()
-        self.console.print(Panel(
-            Markdown(diary_content),
-            title="[bold yellow]📖 일기가 작성되었습니다![/bold yellow]",
-            border_style="yellow",
-            padding=(1, 2)
-        ))
+        self.console.print(
+            Panel(
+                Markdown(diary_content),
+                title="[bold yellow]📖 일기가 작성되었습니다![/bold yellow]",
+                border_style="yellow",
+                padding=(1, 2),
+            )
+        )
         self.console.print("\n[green]✓ 일기 초안이 완성되었습니다![/green]")
-        self.console.print("[dim]계속 대화하거나 'quit'로 종료하세요.[/dim]")
+        choice = Prompt.ask(
+            "[yellow]이대로 일기를 작성할까요?[/yellow]",
+            choices=["y", "n"],
+            default="y",
+        )
+
+        if choice == "y":
+            self.console.print("[dim]...[/dim]")
 
     def _display_recent_messages(self, session, count: int = 3):
         """최근 메시지 몇 개 표시"""
-        recent_messages = session.messages[-count * 2:] if len(session.messages) > count * 2 else session.messages
+        recent_messages = (
+            session.messages[-count * 2 :]
+            if len(session.messages) > count * 2
+            else session.messages
+        )
 
         for msg in recent_messages:
             if msg.role.value == "user":
