@@ -77,7 +77,9 @@ class DiaryUI:
                 # 일기 상세 보기
                 index = int(choice) - 1
                 if 0 <= index < len(self._current_diaries):
-                    self._show_diary_detail(self._current_diaries[index])
+                    self._show_diary_detail(
+                        self._current_diaries[index], self.on_back_callback
+                    )
                 else:
                     self.console.print(
                         "[red]잘못된 번호입니다. 다시 선택해주세요.[/red]"
