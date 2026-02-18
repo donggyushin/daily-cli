@@ -78,7 +78,7 @@ class DiaryUI:
                 index = int(choice) - 1
                 if 0 <= index < len(self._current_diaries):
                     self._show_diary_detail(
-                        self._current_diaries[index], self.on_back_callback
+                        self._current_diaries[index], self.show_diary_list
                     )
                 else:
                     self.console.print(
