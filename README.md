@@ -43,7 +43,7 @@ make up-db
 # Username/Password: .env 파일에 설정한 값
 
 
-# 환경 변수 변경 후 재시작
+# 환경 변수를 변경했다면, 변경 후 재시작
 make restart-db
 ```
 
