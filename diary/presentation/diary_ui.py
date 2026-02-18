@@ -145,10 +145,10 @@ class DiaryUI:
         # 페이지네이션 정보
         if self._current_cursor:
             self.console.print(
-                f"\n[dim]다음 페이지가 있습니다. 'n'을 입력하여 더 보기[/dim]"
+                "\n[dim]다음 페이지가 있습니다. 'n'을 입력하여 더 보기[/dim]"
             )
         else:
-            self.console.print(f"\n[dim]마지막 페이지입니다.[/dim]")
+            self.console.print("\n[dim]마지막 페이지입니다.[/dim]")
 
     def _show_diary_detail(self, diary: Diary):
         """
@@ -159,18 +159,28 @@ class DiaryUI:
         """
         self.console.clear()
 
-        # 패널로 일기 표시
-        self.console.print(
-            Panel(
-                f"[bold cyan]{diary.get_formatted_date()}[/bold cyan]\n\n"
-                f"{diary.content}\n\n"
-                f"[dim]글자 수: {diary.get_word_count()}자[/dim]\n"
-                f"[dim]작성: {diary.created_at.strftime('%Y-%m-%d %H:%M')}[/dim]\n"
-                f"[dim]수정: {diary.updated_at.strftime('%Y-%m-%d %H:%M')}[/dim]",
-                border_style="cyan",
-                title="📖 일기 상세",
+        if diary.created_at and diary.updated_at:
+            self.console.print(
+                Panel(
+                    f"[bold cyan]{diary.get_formatted_date()}[/bold cyan]\n\n"
+                    f"{diary.content}\n\n"
+                    f"[dim]글자 수: {diary.get_word_count()}자[/dim]\n"
+                    f"[dim]작성: {diary.created_at.strftime('%Y-%m-%d %H:%M')}[/dim]\n"
+                    f"[dim]수정: {diary.updated_at.strftime('%Y-%m-%d %H:%M')}[/dim]",
+                    border_style="cyan",
+                    title="📖 일기 상세",
+                )
             )
-        )
+        else:
+            self.console.print(
+                Panel(
+                    f"[bold cyan]{diary.get_formatted_date()}[/bold cyan]\n\n"
+                    f"{diary.content}\n\n"
+                    f"[dim]글자 수: {diary.get_word_count()}자[/dim]\n",
+                    border_style="cyan",
+                    title="📖 일기 상세",
+                )
+            )
 
         # 옵션 메뉴
         self.console.print("\n[bold]옵션:[/bold]")

@@ -1,6 +1,6 @@
 """채팅 UI 컴포넌트"""
 
-from datetime import date, datetime
+from datetime import datetime
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
@@ -8,6 +8,7 @@ from rich.prompt import Prompt
 
 from diary.domain.services.chat_service import ChatService
 from diary.domain.services.diary_service import DiaryService
+from diary.presentation.diary_ui import DiaryUI
 
 
 class ChatUI:
@@ -25,6 +26,7 @@ class ChatUI:
         self.chat_service = chat_service
         self.console = console
         self.diary_service = diary_service
+        self.diary_ui = DiaryUI(diary_service, console)
 
     def start_chat(self, on_back_callback):
         """
@@ -134,8 +136,9 @@ class ChatUI:
 
         if choice == "y":
             with self.console.status("", spinner="earth"):
-                self.diary_service.create_diary(datetime.now(), content)
+                diary = self.diary_service.create_diary(datetime.now(), content)
                 # 일기 상세 페이지 보여주기. 인자로 id 전달 필요
+                self.diary_ui._show_diary_detail(diary)
 
     def _display_recent_messages(self, session, count: int = 3):
         """최근 메시지 몇 개 표시"""
