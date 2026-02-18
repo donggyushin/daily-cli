@@ -8,6 +8,7 @@ from rich.prompt import Prompt
 
 from diary.domain.services import CredentialService, UserPreferencesService, ChatService
 from diary.domain.services.diary_service import DiaryService
+from diary.presentation.diary_ui import DiaryUI
 from diary.presentation.preferences_ui import PreferencesUI
 from diary.presentation.api_key_ui import ApiKeyUI
 from diary.presentation.chat_ui import ChatUI
@@ -41,6 +42,7 @@ class DiaryApp:
         # UI 컴포넌트 초기화
         self.preferences_ui = PreferencesUI(preferences_service, self.console)
         self.api_key_ui = ApiKeyUI(credential_service, self.console)
+        self.diary_ui = DiaryUI(diary_service, self.console)
 
         # ChatUI는 chat_service가 있을 때만 초기화
         if chat_service:
@@ -96,10 +98,11 @@ class DiaryApp:
         self.console.print("  1. Write Diary")
         self.console.print("  2. Manage API Keys")
         self.console.print("  3. Manage Preferences")
-        self.console.print("  4. Exit")
+        self.console.print("  4. Diaries")
+        self.console.print("  5. Exit")
         self.console.print()
 
-        choice = Prompt.ask("Choice", choices=["1", "2", "3", "4"], default="1")
+        choice = Prompt.ask("Choice", choices=["1", "2", "3", "4", "5"], default="1")
 
         if choice == "1":
             self._write_diary()
@@ -108,6 +111,8 @@ class DiaryApp:
         elif choice == "3":
             self._manage_preferences()
         elif choice == "4":
+            self.diary_ui.show_diary_list(self._show_menu, 20)
+        elif choice == "5":
             self.console.print("[dim]GoodBye![/dim]")
             raise typer.Exit(0)
 
