@@ -41,34 +41,48 @@ jobs:
           sleep 10
           echo "✅ MongoDB is ready"
 
-      # 4. Docker 이미지 빌드
+      # 4. Docker 이미지 빌드 (make build)
       - name: Build Docker image
         run: |
-          docker compose build daily-cli
+          make build
           echo "✅ Docker image built successfully"
 
-      # 5. 애플리케이션 실행 테스트 (--help)
-      - name: Test application startup
+      # 5. 애플리케이션 실행 테스트 (make run with timeout)
+      - name: Test application startup (make run)
         run: |
-          echo "🧪 Testing application with --help..."
-          docker compose run --rm daily-cli uv run main.py --help
-          echo "✅ Application runs without errors"
+          echo "🧪 Testing 'make run' with 5-second timeout..."
+          # timeout으로 5초간 실행 후 종료 (exit code 124는 정상)
+          timeout 5s make run || EXIT_CODE=$?
+          if [ "${EXIT_CODE:-0}" -eq 124 ] || [ "${EXIT_CODE:-0}" -eq 0 ]; then
+            echo "✅ 'make run' started successfully"
+          else
+            echo "❌ 'make run' failed (exit code: ${EXIT_CODE})"
+            exit 1
+          fi
 
-      # 6. 정리 (Clean up)
+      # 6. --help 옵션 테스트 (정상 종료 확인)
+      - name: Test application with --help
+        run: |
+          echo "🧪 Testing application with --help option..."
+          docker compose run --rm daily-cli python main.py --help
+          echo "✅ Application --help works correctly"
+
+      # 7. 정리 (Clean up)
       - name: Clean up
         if: always()
         run: |
           docker compose down -v
           echo "✅ Cleanup completed"
 
-      # 7. 테스트 결과 요약
+      # 8. 테스트 결과 요약
       - name: Test Summary
         if: success()
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ All tests passed!"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✓ Docker image built successfully"
+          echo "✓ Docker image built with 'make build'"
           echo "✓ MongoDB connection established"
-          echo "✓ Application starts without errors"
+          echo "✓ 'make run' starts without errors"
+          echo "✓ Application --help works correctly"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
