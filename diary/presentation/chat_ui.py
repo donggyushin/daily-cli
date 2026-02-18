@@ -6,19 +6,24 @@ from rich.markdown import Markdown
 from rich.prompt import Prompt
 
 from diary.domain.services.chat_service import ChatService
+from diary.domain.services.diary_service import DiaryService
 
 
 class ChatUI:
     """채팅 대화 UI - 단일 책임 원칙 적용"""
 
-    def __init__(self, chat_service: ChatService, console: Console):
+    def __init__(
+        self, chat_service: ChatService, console: Console, diary_service: DiaryService
+    ):
         """
         Args:
             chat_service: 채팅 비즈니스 로직
             console: Rich Console 객체
+            diary_service: 일기 비즈니스 로직
         """
         self.chat_service = chat_service
         self.console = console
+        self.diary_service = diary_service
 
     def start_chat(self, on_back_callback):
         """
