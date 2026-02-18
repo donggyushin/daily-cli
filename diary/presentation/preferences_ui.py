@@ -119,11 +119,11 @@ class PreferencesUI:
         self.console.print()
         confirm = Prompt.ask(
             "Do you want to reset all preferences to default? (yes/no)",
-            choices=["yes", "no"],
-            default="no",
+            choices=["y", "n"],
+            default="n",
         )
 
-        if confirm == "yes":
+        if confirm == "y":
             try:
                 preferences = self.preferences_service.reset_to_default()
                 self.console.print(
