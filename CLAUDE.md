@@ -364,6 +364,13 @@ class FileSystemWritingStyleExamplesRepository(WritingStyleExamplesRepositoryInt
 - 인덱스 자동 생성 (성능 최적화)
 - Context Manager 지원
 
+**MongoDBDiaryRepository** ⭐ NEW
+- 일기를 MongoDB에 저장
+- `diaries` 컬렉션 사용
+- **Cursor 기반 페이지네이션** 구현
+- 날짜 기반 고유 인덱스 (하루에 하나의 일기)
+- 날짜 + 생성시각 복합 정렬 (최신순)
+
 **OpenAIClient** ⭐ NEW
 - OpenAI GPT 모델 API 클라이언트 (기본: gpt-4o-mini)
 - `AIClientInterface` 구현
@@ -389,7 +396,7 @@ class FileSystemWritingStyleExamplesRepository(WritingStyleExamplesRepositoryInt
 
 확장 후 (MongoDB):
 - MongoDBChatRepository (MongoDB) ✅ 구현됨
-- MongoDBDiaryRepository (MongoDB) ← 구현 예정
+- MongoDBDiaryRepository (MongoDB) ✅ 구현됨 (Cursor 기반 페이지네이션)
 
 확장 후 (PostgreSQL):
 - DatabaseCredentialRepository (PostgreSQL)

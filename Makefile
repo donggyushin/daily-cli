@@ -72,6 +72,9 @@ logs-db: ## MongoDB 로그 확인
 mongo-shell: ## MongoDB 쉘 접속
 	@docker compose exec mongodb mongosh -u $$(grep MONGODB_USERNAME .env | cut -d '=' -f2) -p $$(grep MONGODB_PASSWORD .env | cut -d '=' -f2)
 
+test-diary: ## MongoDB Diary Repository 테스트
+	uv run python scripts/test_mongodb_diary.py
+
 # 로컬 실행 (비교용)
 local: ## 로컬에서 uv run 실행
 	uv run main.py

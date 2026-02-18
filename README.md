@@ -86,20 +86,35 @@ make restart-db
 
 **애플리케이션에서 MongoDB 사용**:
 ```python
-from diary.data.repositories import MongoDBChatRepository
-from diary.domain.services import ChatService
+from diary.data.repositories import (
+    MongoDBChatRepository,
+    MongoDBDiaryRepository
+)
+from diary.domain.services import ChatService, DiaryService
 
 # MongoDB Repository 사용
-chat_repo = MongoDBChatRepository(
-    host="mongodb",
-    port=27017,
-    username="admin",
-    password="admin123",
-    database="daily_diary"
+chat_repo = MongoDBChatRepository()      # 채팅
+diary_repo = MongoDBDiaryRepository()    # 일기 (Cursor 기반 페이지네이션)
+
+# Service 생성
+chat_service = ChatService(chat_repo, ai_client, preferences_service)
+diary_service = DiaryService(diary_repo)
+
+# 일기 작성
+from datetime import date
+diary = diary_service.create_diary(
+    diary_date=date.today(),
+    content="오늘의 일기"
 )
 
-# 또는 환경 변수로 자동 설정
-chat_repo = MongoDBChatRepository()  # .env 파일 읽음
+# Cursor 기반 페이지네이션
+diaries, next_cursor = diary_service.list_diaries(limit=10)
+```
+
+**테스트**:
+```bash
+# MongoDB Diary Repository 테스트
+make test-diary
 ```
 
 ## 사용 예제
