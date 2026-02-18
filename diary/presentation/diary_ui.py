@@ -156,7 +156,7 @@ class DiaryUI:
         else:
             self.console.print("\n[dim]마지막 페이지입니다.[/dim]")
 
-    def _show_diary_detail(self, diary: Diary, on_back_callback=None):
+    def _show_diary_detail(self, diary: Diary, on_back_callback_detail=None):
         """
         일기 상세 보기
 
@@ -164,7 +164,6 @@ class DiaryUI:
             diary: 조회할 일기
         """
         self.console.clear()
-        self.on_back_callback = on_back_callback
 
         if diary.created_at and diary.updated_at:
             self.console.print(
@@ -202,8 +201,8 @@ class DiaryUI:
         elif choice == "d":
             self._delete_diary(diary)
         elif choice == "b":
-            if self.on_back_callback:
-                self.on_back_callback()
+            if on_back_callback_detail:
+                on_back_callback_detail()
                 return
         else:
             self.console.print("[red]잘못된 선택입니다.[/red]")
