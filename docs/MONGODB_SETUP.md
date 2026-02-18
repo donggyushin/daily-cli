@@ -4,10 +4,32 @@
 
 ## 1. MongoDB 시작하기
 
+### 🔐 초기 설정 (보안 - 필수!)
+
+**처음 MongoDB를 사용하기 전에 반드시 수행:**
+
+```bash
+# Step 1: 환경 변수 파일 생성
+make setup-env
+
+# Step 2: 비밀번호 변경 (⚠️ 필수!)
+vi .env
+# MONGODB_PASSWORD=CHANGE_THIS_PASSWORD  →  강력한 비밀번호로 변경
+# ME_CONFIG_BASICAUTH_PASSWORD=CHANGE_THIS_PASSWORD  →  변경
+
+# Step 3: 보안 검증
+make check-env
+```
+
+**⚠️ 중요:**
+- 기본 비밀번호(`CHANGE_THIS_PASSWORD`)를 절대 그대로 사용하지 마세요!
+- `.env` 파일은 Git에 커밋되지 않습니다 (`.gitignore`에 포함됨)
+- 자세한 내용: [docs/SECURITY.md](SECURITY.md)
+
 ### Docker Compose로 MongoDB 실행
 
 ```bash
-# MongoDB + Mongo Express 시작
+# MongoDB + Mongo Express 시작 (자동으로 보안 검증)
 make up-db
 
 # 또는 직접 실행
@@ -17,8 +39,7 @@ docker compose up -d mongodb mongo-express
 서비스 확인:
 - **MongoDB**: `localhost:27017`
 - **Mongo Express** (웹 UI): `http://localhost:8081`
-  - Username: `admin`
-  - Password: `admin123`
+  - Username/Password: `.env` 파일에 설정한 값
 
 ### MongoDB 중지
 

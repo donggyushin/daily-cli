@@ -43,29 +43,46 @@ make dev
 
 파일 시스템 대신 MongoDB를 데이터 저장소로 사용할 수 있습니다.
 
+#### 🔐 중요: 초기 설정 (보안)
+
 ```bash
-# MongoDB + Mongo Express 시작
+# 1. 환경 변수 파일 생성
+make setup-env
+
+# 2. ⚠️ 반드시 비밀번호 변경!
+vi .env
+# MONGODB_PASSWORD=CHANGE_THIS_PASSWORD  →  강력한 비밀번호로 변경
+# ME_CONFIG_BASICAUTH_PASSWORD=CHANGE_THIS_PASSWORD  →  변경
+
+# 3. 보안 검증
+make check-env
+```
+
+**⚠️ 절대 기본 비밀번호(`CHANGE_THIS_PASSWORD`)를 그대로 사용하지 마세요!**
+
+상세한 보안 가이드: [docs/SECURITY.md](docs/SECURITY.md)
+
+#### MongoDB 사용
+
+```bash
+# MongoDB + Mongo Express 시작 (자동으로 보안 검증)
 make up-db
 
 # Mongo Express 접속
 # http://localhost:8081
-# Username: admin / Password: admin123
+# Username/Password: .env 파일에 설정한 값
 
 # MongoDB 쉘 접속
 make mongo-shell
 
 # MongoDB 서비스 중지
 make down-db
+
+# 환경 변수 변경 후 재시작
+make restart-db
 ```
 
-**환경 변수 설정**:
-```bash
-# .env 파일 생성
-cp .env.example .env
-
-# 필요시 MongoDB 연결 정보 수정
-vi .env
-```
+**환경 변수 변경 후 적용 방법**: [docs/MONGODB_UPDATE_GUIDE.md](docs/MONGODB_UPDATE_GUIDE.md)
 
 **애플리케이션에서 MongoDB 사용**:
 ```python
