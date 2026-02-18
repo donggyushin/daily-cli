@@ -33,6 +33,10 @@ class DiaryUI:
             on_back_callback: 뒤로가기 콜백 함수
             limit: 한 페이지당 표시할 일기 개수
         """
+
+        if on_back_callback:
+            self.on_back_callback = on_back_callback
+
         self.console.clear()
         self.console.print(
             Panel(
@@ -60,8 +64,8 @@ class DiaryUI:
             choice = Prompt.ask("\n선택", default="b").strip().lower()
 
             if choice == "b":
-                if on_back_callback:
-                    on_back_callback()
+                if self.on_back_callback:
+                    self.on_back_callback()
                 break
             elif choice == "n" and self._current_cursor:
                 # 다음 페이지
@@ -150,7 +154,7 @@ class DiaryUI:
         else:
             self.console.print("\n[dim]마지막 페이지입니다.[/dim]")
 
-    def _show_diary_detail(self, diary: Diary):
+    def _show_diary_detail(self, diary: Diary, on_back_callback=None):
         """
         일기 상세 보기
 
@@ -158,6 +162,7 @@ class DiaryUI:
             diary: 조회할 일기
         """
         self.console.clear()
+        self.on_back_callback = on_back_callback
 
         if diary.created_at and diary.updated_at:
             self.console.print(
@@ -195,7 +200,9 @@ class DiaryUI:
         elif choice == "d":
             self._delete_diary(diary)
         elif choice == "b":
-            return
+            if self.on_back_callback:
+                self.on_back_callback()
+                return
         else:
             self.console.print("[red]잘못된 선택입니다.[/red]")
             input("\nEnter를 눌러 계속...")
