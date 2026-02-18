@@ -44,7 +44,9 @@ class DiaryService:
             raise ValueError("일기 내용은 비어있을 수 없습니다.")
 
         if self.diary_repo.exists_on_date(diary_date):
-            raise ValueError(f"{diary_date} 날짜의 일기가 이미 존재합니다. 수정을 원하시면 update를 사용하세요.")
+            raise ValueError(
+                f"{diary_date} 날짜의 일기가 이미 존재합니다. 수정을 원하시면 update를 사용하세요."
+            )
 
         # 일기 엔티티 생성
         diary = Diary(diary_date=diary_date, content=content.strip())
@@ -110,6 +112,18 @@ class DiaryService:
         """
         return self.diary_repo.get_by_date(diary_date)
 
+    def get_diary_by_id(self, diary_id: str) -> Optional[Diary]:
+        """
+        ID로 일기 조회
+
+        Args:
+            diary_id: 조회할 일기 ID
+
+        Returns:
+            일기 또는 None
+        """
+        return self.diary_repo.get_by_id(diary_id)
+
     def get_today_diary(self) -> Optional[Diary]:
         """오늘의 일기 조회"""
         return self.diary_repo.get_by_date(date.today())
@@ -166,7 +180,10 @@ class DiaryService:
         if not diary:
             raise ValueError(f"{diary_date} 날짜의 일기를 찾을 수 없습니다.")
 
-        return self.diary_repo.delete(diary.diary_id)
+        if diary.diary_id:
+            return self.diary_repo.delete(diary.diary_id)
+        else:
+            return False
 
     def has_diary_on_date(self, diary_date: date) -> bool:
         """특정 날짜에 일기가 있는지 확인"""

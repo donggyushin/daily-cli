@@ -192,11 +192,11 @@ class ApiKeyUI:
         # 확인
         confirm = Prompt.ask(
             f"Do you want to delete {provider.value}? (yes/no)",
-            choices=["yes", "no"],
-            default="no",
+            choices=["y", "n"],
+            default="n",
         )
 
-        if confirm == "yes":
+        if confirm == "y":
             try:
                 self.credential_service.delete_credential(provider)
                 self.console.print(

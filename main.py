@@ -10,14 +10,15 @@ from diary.data.repositories import (
     FileSystemCredentialRepository,
     FileSystemUserPreferencesRepository,
     FileSystemWritingStyleExamplesRepository,
-    FileSystemChatRepository,
     OpenAIClient,
     AnthropicClient,
     GoogleAIClient,
 )
 from diary.data.repositories.mongodb_chat_repository import MongoDBChatRepository
+from diary.data.repositories.mongodb_diary_repository import MongoDBDiaryRepository
 from diary.domain.services import CredentialService, UserPreferencesService, ChatService
 from diary.domain.entities import AIProvider
+from diary.domain.services.diary_service import DiaryService
 from diary.presentation.cli import DiaryApp
 
 app = typer.Typer()
@@ -38,10 +39,12 @@ def main(ctx: typer.Context):
         credential_repo = FileSystemCredentialRepository()
         preferences_repo = FileSystemUserPreferencesRepository()
         examples_repo = FileSystemWritingStyleExamplesRepository()
+        diary_repo = MongoDBDiaryRepository()
 
         # Domain Layer - Business Logic (인터페이스에만 의존)
         credential_service = CredentialService(credential_repo)
         preferences_service = UserPreferencesService(preferences_repo, examples_repo)
+        diary_service = DiaryService(diary_repo)
 
         # AI Client 선택 (기본 AI 기준)
         default_ai = credential_service.get_default_credential()
@@ -67,7 +70,9 @@ def main(ctx: typer.Context):
                 )
 
         # Presentation Layer - CLI (Domain에만 의존)
-        diary_app = DiaryApp(credential_service, preferences_service, chat_service)
+        diary_app = DiaryApp(
+            credential_service, preferences_service, diary_service, chat_service
+        )
 
         # 실행
         diary_app.run()
