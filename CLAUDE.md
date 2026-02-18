@@ -184,10 +184,33 @@ class ChatSession:
         """AI API 호출용 대화 히스토리 반환"""
 ```
 
+**Diary** - 일기 ⭐ NEW
+```python
+class Diary:
+    diary_date: date          # 일기 날짜 (YYYY-MM-DD)
+    content: str              # 일기 내용
+    diary_id: Optional[str]   # 일기 고유 ID
+    created_at: datetime      # 생성 시각
+    updated_at: datetime      # 수정 시각
+
+    def update_content(self, new_content: str) -> None:
+        """비즈니스 로직: 내용 수정 및 시각 갱신"""
+
+    def is_today(self) -> bool:
+        """오늘 작성한 일기인지 확인"""
+
+    def get_formatted_date(self) -> str:
+        """포맷된 날짜 반환 (예: 2024년 2월 18일 월요일)"""
+
+    def get_word_count(self) -> int:
+        """글자 수 반환"""
+```
+
 #### 2.2 Services (비즈니스 로직)
 - `CredentialService` - API Key 관리, 검증, 기본 AI 설정
 - `UserPreferencesService` - 사용자 설정 관리, 강화된 프롬프트 생성
 - `ChatService` - AI 대화 세션 관리, 메시지 전송/응답 처리 ⭐ NEW
+- `DiaryService` - 일기 CRUD, 날짜 중복 검증, 페이지네이션 ⭐ NEW
 
 #### 2.3 Interfaces (Repository 인터페이스)
 Domain이 정의하고, Data Layer가 구현:
@@ -196,12 +219,13 @@ Domain이 정의하고, Data Layer가 구현:
 - `WritingStyleExamplesRepositoryInterface`
 - `AIClientInterface` - AI API 호출 추상화 ⭐ NEW
 - `ChatRepositoryInterface` - 채팅 저장소 추상화 ⭐ NEW
+- `DiaryRepositoryInterface` - 일기 저장소 (Cursor 기반 페이지네이션) ⭐ NEW
 
 **핵심 원칙**:
 - **Domain은 아무것도 의존하지 않음** - 가장 안쪽 레이어
 - **인터페이스(추상)는 Domain이 정의**하고, Data Layer가 구현함 (의존성 역전)
 
-**실제 예시**:
+**실제 예시 1 - UserPreferencesRepository**:
 ```python
 # domain/interfaces/user_preferences_repository.py
 from abc import ABC, abstractmethod
@@ -235,6 +259,60 @@ class UserPreferencesService:
             examples = self.examples_repo.get_examples(current_style)
 
         return current_style.get_prompt_instruction(examples)
+```
+
+**실제 예시 2 - DiaryRepository (Cursor 기반 페이지네이션)** ⭐ NEW:
+```python
+# domain/interfaces/diary_repository.py
+from abc import ABC, abstractmethod
+from typing import Tuple, List, Optional
+from datetime import date
+
+class DiaryRepositoryInterface(ABC):
+    @abstractmethod
+    def save(self, diary: Diary) -> Diary:
+        """일기 저장"""
+        pass
+
+    @abstractmethod
+    def get_by_date(self, diary_date: date) -> Optional[Diary]:
+        """특정 날짜의 일기 조회"""
+        pass
+
+    @abstractmethod
+    def list_diaries(
+        self,
+        cursor: Optional[str] = None,
+        limit: int = 30,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+    ) -> Tuple[List[Diary], Optional[str]]:
+        """
+        일기 목록 조회 (Cursor 기반 페이지네이션)
+
+        Returns:
+            (일기 리스트, 다음 커서)
+            - 일기 리스트: 최신순으로 정렬된 일기들
+            - 다음 커서: 다음 페이지를 가져올 커서 (더 이상 없으면 None)
+        """
+        pass
+
+# domain/services/diary_service.py
+class DiaryService:
+    def __init__(self, diary_repo: DiaryRepositoryInterface):
+        self.diary_repo = diary_repo
+
+    def create_diary(self, diary_date: date, content: str) -> Diary:
+        """일기 작성 (날짜 중복 검증 포함)"""
+        if self.diary_repo.exists_on_date(diary_date):
+            raise ValueError("해당 날짜의 일기가 이미 존재합니다.")
+
+        diary = Diary(diary_date=diary_date, content=content)
+        return self.diary_repo.save(diary)
+
+    def list_diaries(self, cursor: Optional[str] = None, limit: int = 30):
+        """Cursor 기반 페이지네이션"""
+        return self.diary_repo.list_diaries(cursor=cursor, limit=limit)
 ```
 
 ---
@@ -280,6 +358,19 @@ class FileSystemWritingStyleExamplesRepository(WritingStyleExamplesRepositoryInt
 - 활성 세션 추적 (`data/chats/active_session.json`)
 - 세션 목록 조회, 삭제 기능
 
+**MongoDBChatRepository** ⭐ NEW
+- 채팅 세션을 MongoDB에 저장
+- `chat_sessions` 컬렉션 사용
+- 인덱스 자동 생성 (성능 최적화)
+- Context Manager 지원
+
+**MongoDBDiaryRepository** ⭐ NEW
+- 일기를 MongoDB에 저장
+- `diaries` 컬렉션 사용
+- **Cursor 기반 페이지네이션** 구현
+- 날짜 기반 고유 인덱스 (하루에 하나의 일기)
+- 날짜 + 생성시각 복합 정렬 (최신순)
+
 **OpenAIClient** ⭐ NEW
 - OpenAI GPT 모델 API 클라이언트 (기본: gpt-4o-mini)
 - `AIClientInterface` 구현
@@ -300,18 +391,27 @@ class FileSystemWritingStyleExamplesRepository(WritingStyleExamplesRepositoryInt
 - FileSystemCredentialRepository (JSON)
 - FileSystemUserPreferencesRepository (JSON)
 - FileSystemWritingStyleExamplesRepository (TXT)
+- FileSystemChatRepository (JSON)
+- FileSystemDiaryRepository (JSON) ← 구현 예정
 
-확장 후:
+확장 후 (MongoDB):
+- MongoDBChatRepository (MongoDB) ✅ 구현됨
+- MongoDBDiaryRepository (MongoDB) ✅ 구현됨 (Cursor 기반 페이지네이션)
+
+확장 후 (PostgreSQL):
 - DatabaseCredentialRepository (PostgreSQL)
 - DatabaseUserPreferencesRepository (PostgreSQL)
 - RemoteWritingStyleExamplesRepository (API)
 
 → Domain/Presentation 코드는 변경 없이 Data Layer만 교체!
+→ MongoDB와 파일 시스템을 혼용 가능 (서로 다른 Repository 사용)
 ```
 
 ---
 
-## 특별 기능: Few-shot Learning 시스템
+## 특별 기능
+
+### 1. Few-shot Learning 시스템
 
 **목적**: 사용자가 좋아하는 작가의 문체를 AI에게 학습시키기
 
@@ -353,11 +453,82 @@ Enhanced AI Prompt with Few-shot examples
 이러한 스타일을 참고하여 깊이 있고 감성적인 일기를 작성해주세요.
 ```
 
-### 아키텍처 장점
+#### 아키텍처 장점
 - ✅ **사용자 친화적**: 텍스트 파일만 편집
 - ✅ **레이어 분리**: Domain은 파일 시스템 모름
 - ✅ **선택적 기능**: 예시 파일 없어도 기본 동작
 - ✅ **확장 가능**: 다른 스타일에도 동일하게 적용
+
+---
+
+### 2. Cursor 기반 페이지네이션 ⭐ NEW
+
+**목적**: 효율적인 일기 목록 조회 (대량 데이터 처리)
+
+#### 왜 Cursor 기반인가?
+
+**전통적 Offset 기반의 문제점**:
+```python
+# Offset 방식 (비효율적)
+page1 = get_diaries(offset=0, limit=10)   # 1-10번 일기
+page2 = get_diaries(offset=10, limit=10)  # 11-20번 일기
+page3 = get_diaries(offset=20, limit=10)  # 21-30번 일기
+
+# 문제:
+# - offset=1000이면 1000개를 건너뛰어야 함 (느림)
+# - 새 데이터 추가 시 중복/누락 가능
+```
+
+**Cursor 방식의 장점**:
+```python
+# Cursor 방식 (효율적)
+diaries, cursor = get_diaries(limit=10)              # 최근 10개
+more, cursor = get_diaries(cursor=cursor, limit=10)  # 다음 10개
+
+# 장점:
+# - 항상 O(1) 시작 (마지막 위치에서 시작)
+# - 데이터 추가되어도 중복/누락 없음
+# - 무한 스크롤에 최적화
+```
+
+#### 구현 예시
+
+```python
+# domain/interfaces/diary_repository.py
+class DiaryRepositoryInterface(ABC):
+    @abstractmethod
+    def list_diaries(
+        self,
+        cursor: Optional[str] = None,
+        limit: int = 30,
+    ) -> Tuple[List[Diary], Optional[str]]:
+        """
+        Returns:
+            (일기 리스트, 다음 커서)
+            - 일기 리스트: 최신순 정렬
+            - 다음 커서: None이면 마지막 페이지
+        """
+        pass
+
+# 사용 예시
+# 첫 페이지
+diaries, next_cursor = diary_service.list_diaries(limit=10)
+for diary in diaries:
+    print(diary.get_formatted_date(), diary.content[:50])
+
+# 다음 페이지
+if next_cursor:
+    more_diaries, next_cursor = diary_service.list_diaries(
+        cursor=next_cursor,
+        limit=10
+    )
+```
+
+#### 장점
+- ✅ **성능**: 대량 데이터에서도 일정한 속도
+- ✅ **안정성**: 새 데이터 추가 시에도 중복/누락 없음
+- ✅ **확장성**: MongoDB, PostgreSQL 모두 지원 가능
+- ✅ **무한 스크롤**: 모바일/웹 UI에 최적화
 
 ---
 
@@ -372,11 +543,17 @@ from diary.data.repositories import (
     FileSystemUserPreferencesRepository,
     FileSystemWritingStyleExamplesRepository,
     FileSystemChatRepository,
+    # FileSystemDiaryRepository,  # ← 구현 예정
     OpenAIClient,
     AnthropicClient,
     GoogleAIClient,
 )
-from diary.domain.services import CredentialService, UserPreferencesService, ChatService
+from diary.domain.services import (
+    CredentialService,
+    UserPreferencesService,
+    ChatService,
+    # DiaryService,  # ← 구현 예정
+)
 from diary.domain.entities import AIProvider
 from diary.presentation.cli import DiaryApp
 
@@ -384,6 +561,7 @@ from diary.presentation.cli import DiaryApp
 credential_repo = FileSystemCredentialRepository()
 preferences_repo = FileSystemUserPreferencesRepository()
 examples_repo = FileSystemWritingStyleExamplesRepository()
+# diary_repo = FileSystemDiaryRepository()  # ← 구현 예정
 
 # Domain Layer - Business Logic (인터페이스에만 의존)
 credential_service = CredentialService(credential_repo)
@@ -449,19 +627,22 @@ daily-cli/
 │   │   │   ├── user_preferences.py      # 사용자 설정
 │   │   │   ├── writing_style.py         # 일기 작성 스타일
 │   │   │   ├── chat_message.py          # 채팅 메시지 ⭐ NEW
-│   │   │   └── chat_session.py          # 채팅 세션 ⭐ NEW
+│   │   │   ├── chat_session.py          # 채팅 세션 ⭐ NEW
+│   │   │   └── diary.py                 # 일기 ⭐ NEW
 │   │   ├── services/                    # 비즈니스 로직
 │   │   │   ├── __init__.py
 │   │   │   ├── credential_service.py
 │   │   │   ├── user_preferences_service.py
-│   │   │   └── chat_service.py          # 채팅 로직 ⭐ NEW
+│   │   │   ├── chat_service.py          # 채팅 로직 ⭐ NEW
+│   │   │   └── diary_service.py         # 일기 CRUD 로직 ⭐ NEW
 │   │   └── interfaces/                  # Repository 인터페이스
 │   │       ├── __init__.py
 │   │       ├── credential_repository.py
 │   │       ├── user_preferences_repository.py
 │   │       ├── writing_style_examples_repository.py
 │   │       ├── ai_client.py             # AI API 인터페이스 ⭐ NEW
-│   │       └── chat_repository.py       # 채팅 저장소 인터페이스 ⭐ NEW
+│   │       ├── chat_repository.py       # 채팅 저장소 인터페이스 ⭐ NEW
+│   │       └── diary_repository.py      # 일기 저장소 인터페이스 ⭐ NEW
 │   └── data/                            # Data Layer
 │       └── repositories/                # Repository 구현체
 │           ├── __init__.py
@@ -478,9 +659,11 @@ daily-cli/
 │   ├── writing_examples/                # 예시 문장
 │   │   ├── README.md                    # 사용 가이드
 │   │   └── emotional_literary.txt       # 감성적 스타일 예시
-│   └── chats/                           # 채팅 데이터 ⭐ NEW
-│       ├── {session-id}.json            # 각 세션 대화 기록
-│       └── active_session.json          # 현재 활성 세션
+│   ├── chats/                           # 채팅 데이터 ⭐ NEW
+│   │   ├── {session-id}.json            # 각 세션 대화 기록
+│   │   └── active_session.json          # 현재 활성 세션
+│   └── diaries/                         # 일기 데이터 ⭐ NEW
+│       └── {diary-id}.json              # 각 일기 파일
 ├── main.py                              # 애플리케이션 진입점 (DI 조립)
 ├── CLAUDE.md                            # 아키텍처 가이드
 ├── pyproject.toml                       # 의존성 관리 (uv 사용)
@@ -496,15 +679,15 @@ daily-cli/
 ### Phase 1: CLI 로컬 앱 (현재)
 ```
 Presentation: CLI (Typer + Rich) + UI 컴포넌트 분리
-Domain: API Key 관리, 사용자 설정, 일기 스타일
-Data: 로컬 파일 시스템 (JSON + TXT)
+Domain: API Key 관리, 사용자 설정, 일기 관리, AI 채팅
+Data: 로컬 파일 시스템 (JSON + TXT) + MongoDB (선택)
 ```
 
 ### Phase 2: 서버 + DB 추가
 ```
 Presentation: CLI (동일)
-Domain: API Key 관리, 사용자 설정, 일기 스타일 (동일)
-Data: PostgreSQL + API Server
+Domain: API Key 관리, 사용자 설정, 일기 관리, AI 채팅 (동일)
+Data: PostgreSQL/MongoDB + API Server
 ```
 **변경사항**: `main.py`에서 Repository 구현체만 교체
 ```python

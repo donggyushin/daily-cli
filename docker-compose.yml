@@ -16,13 +16,19 @@ services:
       # 개발 시 소스 코드 동기화 (선택적)
       # - ./diary:/app/diary
 
-    # 환경 변수 (필요 시)
+    # 환경 변수
+    env_file:
+      - .env  # 환경 변수 파일 (없으면 무시)
     environment:
       - TZ=Asia/Seoul
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
 
-    # 네트워크 (향후 DB 연동 시)
-    # networks:
-    #   - daily-network
+    # 네트워크 (MongoDB 연동)
+    networks:
+      - daily-network
+    depends_on:
+      - mongodb
 
   # 개발용 서비스 (소스 코드 실시간 동기화)
   dev:
@@ -36,10 +42,65 @@ services:
     volumes:
       - .:/app
       - /app/.venv  # 가상환경은 제외
+    env_file:
+      - .env  # 환경 변수 파일 (없으면 무시)
     environment:
       - TZ=Asia/Seoul
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+    networks:
+      - daily-network
+    depends_on:
+      - mongodb
     command: bash
 
-# networks:
-#   daily-network:
-#     driver: bridge
+  # MongoDB 서비스
+  mongodb:
+    image: mongo:8.0
+    container_name: daily-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    env_file:
+      - .env  # 환경 변수 파일에서 읽기
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGODB_DATABASE}
+      - TZ=${TZ:-Asia/Seoul}
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - daily-network
+
+  # Mongo Express (MongoDB 웹 UI - 선택적)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: daily-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env  # 환경 변수 파일에서 읽기
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGODB_USERNAME}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGODB_PASSWORD}
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=${MONGODB_PORT}
+      - ME_CONFIG_BASICAUTH_USERNAME=${ME_CONFIG_BASICAUTH_USERNAME}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${ME_CONFIG_BASICAUTH_PASSWORD}
+    networks:
+      - daily-network
+    depends_on:
+      - mongodb
+
+networks:
+  daily-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local

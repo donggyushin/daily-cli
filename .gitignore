@@ -38,3 +38,7 @@ data/chats/*
 # Database files
 *.db
 *.sqlite
+
+# Environment variables
+.env
+.env.local
